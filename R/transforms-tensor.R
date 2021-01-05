@@ -374,8 +374,8 @@ transform_rotate.torch_tensor <- function(img, angle, resample = 0, expand = FAL
   }
 
 
-  # due to current incoherence of rotation angle direction between affine and rotate implementations
-  # we need to set -angle.
+  # due to current incoherence of rotation angle direction between affine and
+  # rotate implementations we need to set -angle.
   matrix <- get_inverse_affine_matrix(center_f, -angle, c(0.0, 0.0), 1.0, c(0.0, 0.0))
 
   rotate_impl(img, matrix=matrix, resample=resample, expand=expand, fill=fill)
@@ -386,7 +386,7 @@ transform_affine.torch_tensor <- function(img, angle, translate, scale, shear,
                                           resample = 0, fillcolor = NULL) {
 
   if (!is.numeric(angle))
-    value_error("Argument anfle should be int or float")
+    value_error("Argument angle should be int or float")
 
   if (!length(translate) == 2)
     value_error("translate should be length 2")
@@ -402,7 +402,7 @@ transform_affine.torch_tensor <- function(img, angle, translate, scale, shear,
 
   img_size <- get_image_size(img)
 
-  matrix <- get_inverse_affine_matrix(c(0.0, 0.0), angle, translate, scale, shear)
+  matrix <- get_inverse_affine_matrix(c(1, 1), angle, translate, scale, shear)
   affine_impl(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 }
 
@@ -550,10 +550,9 @@ get_inverse_affine_matrix <- function(center, angle, translate, scale, shear) {
   # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
   matrix <- c(d, -b, 0.0, -c, a, 0.0) / scale
 
-
   # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
   matrix[3] = matrix[3] + matrix[1] * (-cx - tx) + matrix[2] * (-cy - ty)
-  matrix[5] = matrix[5] + matrix[4] * (-cx - tx) + matrix[5] * (-cy - ty)
+  matrix[6] = matrix[6] + matrix[4] * (-cx - tx) + matrix[5] * (-cy - ty)
 
   # Apply center translation: C * RSS^-1 * C^-1 * T^-1
   matrix[3] = matrix[3] + cx
@@ -612,11 +611,11 @@ gen_affine_grid <- function(theta, w, h, ow, oh) {
                                                steps=oh)$unsqueeze_(-1))
   base_grid[.., 3]$fill_(1)
 
-  output_grid = base_grid$view(1, oh * ow, 3)$bmm(
+  output_grid = base_grid$view(c(1, oh * ow, 3))$bmm(
     theta$transpose(2, 3) / torch::torch_tensor(c(0.5 * w, 0.5 * h))
   )
 
-  output_grid$view(1, oh, ow, 2)
+  output_grid$view(c(1, oh, ow, 2))
 }
 
 rotate_compute_output_size <- function(theta, w, h) {
@@ -628,9 +627,9 @@ rotate_compute_output_size <- function(theta, w, h) {
     c(-0.5 * w, -0.5 * h, 1.0),
     c(-0.5 * w, 0.5 * h, 1.0),
     c(0.5 * w, 0.5 * h, 1.0),
-    c(0.5 * w, -0.5 * h, 1.0),
+    c(0.5 * w, -0.5 * h, 1.0)
   ))
-  new_pts <- pts$view(1, 4, 3)$bmm(theta$transpose(2, 3))$view(4, 2)
+  new_pts <- pts$view(c(1, 4, 3))$bmm(theta$transpose(2, 3))$view(c(4, 2))
   min_vals <- new_pts$min(dim=1)[[1]]
   max_vals <- new_pts$max(dim=1)[[1]]
 
@@ -640,7 +639,7 @@ rotate_compute_output_size <- function(theta, w, h) {
   cmin = torch::torch_floor((min_vals / tol)$trunc_() * tol)
   size = cmax - cmin
 
-  as.integer(c(size[1], size[2]))
+  as.integer(c(size[1]$item(), size[2]$item()))
 }
 
 rotate_impl <- function(img, matrix, resample = 0, expand = FALSE, fill= NULL) {
@@ -651,9 +650,9 @@ rotate_impl <- function(img, matrix, resample = 0, expand = FALSE, fill= NULL) {
   )
 
   assert_grid_transform_inputs(img, matrix, resample, fill, interpolation_modes)
-  theta <- torch::torch_tensor(matrix)$reshape(1, 2, 3)
-  w <- img$shape(-1)
-  h <- img$shape(-2)
+  theta <- torch::torch_tensor(matrix)$reshape(c(1, 2, 3))
+  w <- tail(img$shape, 2)[2]
+  h <- tail(img$shape, 1)[1]
 
   if (expand) {
     o_shape <- rotate_compute_output_size(theta, w, h)
@@ -679,11 +678,11 @@ affine_impl <- function(img, matrix, resample = 0, fillcolor = NULL) {
 
   assert_grid_transform_inputs(img, matrix, resample, fillcolor, interpolation_modes)
 
-  theta = torch::torch_tensor(matrix, dtype=torch::torch_float())$reshape(1, 2, 3)
-  shape = img$shape()
-  grid = gen_affine_grid(theta, w=rev(shape)[1], h=rev(shape)[2],
+  theta <- torch::torch_tensor(matrix, dtype=torch::torch_float())$reshape(c(1, 2, 3))
+  shape <- img$shape
+  grid <- gen_affine_grid(theta, w=rev(shape)[1], h=rev(shape)[2],
                          ow=rev(shape)[1], oh=rev(shape)[2])
-  mode = interpolation_modes[as.character(resample)]
+  mode <- interpolation_modes[as.character(resample)]
   apply_grid_transform(img, grid, mode)
 }
 
