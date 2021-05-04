@@ -1,6 +1,6 @@
 Package: torchvision
 Title: Models, Datasets and Transformations for Images
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person(given = "Daniel",
            family = "Falbel",
@@ -15,16 +15,15 @@ Description: Provides access to datasets, models and preprocessing
     'PyTorch' vision package.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 URL: https://torchvision.mlverse.org,
         https://github.com/mlverse/torchvision
 RoxygenNote: 7.1.1
 Suggests: testthat, magick
-Imports: torch (>= 0.2.0), fs, rlang, rappdirs, utils, jpeg, png, abind
+Imports: torch (>= 0.3.0), fs, rlang, rappdirs, utils, jpeg, png, abind
 NeedsCompilation: no
-Packaged: 2021-01-05 21:19:58 UTC; dfalbel
+Packaged: 2021-05-04 16:39:22 UTC; dfalbel
 Author: Daniel Falbel [aut, cre],
   RStudio [cph]
 Maintainer: Daniel Falbel <daniel@rstudio.com>
 Repository: CRAN
-Date/Publication: 2021-01-05 21:50:03 UTC
+Date/Publication: 2021-05-04 17:30:03 UTC

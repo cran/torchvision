@@ -18,11 +18,25 @@ test_that("normalize", {
 })
 
 test_that("resize", {
-
   x <- torch_randn(3, 10, 10)
   o <- transform_resize(x, c(20, 20))
-
   expect_tensor_shape(o, c(3, 20, 20))
+
+  x <- torch_randn(3, 10, 20)
+  o <- transform_resize(x, c(10, 10))
+  expect_tensor_shape(o, c(3, 10, 10))
+
+  x <- torch_randn(3, 10, 20)
+  o <- transform_resize(x, c(10))
+  expect_tensor_shape(o, c(3, 10, 20))
+
+  x <- torch_randn(3, 20, 10)
+  o <- transform_resize(x, c(10))
+  expect_tensor_shape(o, c(3, 20, 10))
+
+  x <- torch_randn(3, 10, 5)
+  o <- transform_resize(x, 10)
+  expect_tensor_shape(o, c(3, 20, 10))
 })
 
 test_that("pad", {
@@ -130,7 +144,11 @@ test_that("random_affine", {
   expect_equal(as.numeric(torch_sum(x)), as.numeric(torch_sum(o)))
 
   # probabilistic transformation with p = 0.1 should not result in sum deviating by > 1
-  o <- transform_random_affine(x, 0, c(0.1, 0.1))
+  o <- transform_random_affine(x, 0, c(0.1, 0))
+  expect_lte(as.numeric(torch_sum(x) - 1), as.numeric(torch_sum(o)))
+  expect_gte(as.numeric(torch_sum(x)), as.numeric(torch_sum(o)))
+
+  o <- transform_random_affine(x, 0, c(0, 0.1))
   expect_lte(as.numeric(torch_sum(x) - 1), as.numeric(torch_sum(o)))
   expect_gte(as.numeric(torch_sum(x)), as.numeric(torch_sum(o)))
 

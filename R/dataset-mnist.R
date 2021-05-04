@@ -19,10 +19,10 @@
 mnist_dataset <- dataset(
   name = "mnist",
   resources = list(
-    c("http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
-    c("http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
-    c("http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
-    c("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
+    c("https://storage.googleapis.com/torch-datasets/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
+    c("https://storage.googleapis.com/torch-datasets/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
+    c("https://storage.googleapis.com/torch-datasets/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
+    c("https://storage.googleapis.com/torch-datasets/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
   ),
   training_file = 'training.rds',
   test_file = 'test.rds',
@@ -63,7 +63,11 @@ mnist_dataset <- dataset(
     for (r in self$resources) {
       filename <- tail(strsplit(r[1], "/")[[1]], 1)
       destpath <- file.path(self$raw_folder, filename)
-      utils::download.file(r[1], destfile = destpath)
+
+      withr::with_options(
+        list(timeout = 600),
+        utils::download.file(r[1], destfile = destpath)
+      )
 
       if (!tools::md5sum(destpath) == r[2])
         runtime_error("MD5 sums are not identical for file: {r[1}.")
