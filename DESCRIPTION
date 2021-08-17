@@ -1,6 +1,6 @@
 Package: torchvision
 Title: Models, Datasets and Transformations for Images
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: c(
     person(given = "Daniel",
            family = "Falbel",
@@ -18,12 +18,13 @@ Encoding: UTF-8
 URL: https://torchvision.mlverse.org,
         https://github.com/mlverse/torchvision
 RoxygenNote: 7.1.1
-Suggests: testthat, magick
-Imports: torch (>= 0.3.0), fs, rlang, rappdirs, utils, jpeg, png, abind
+Suggests: testthat, magick, coro
+Imports: torch (>= 0.3.0), fs, rlang, rappdirs, utils, jpeg, png,
+        abind, zip
 NeedsCompilation: no
-Packaged: 2021-05-04 16:39:22 UTC; dfalbel
+Packaged: 2021-08-17 13:10:36 UTC; dfalbel
 Author: Daniel Falbel [aut, cre],
   RStudio [cph]
 Maintainer: Daniel Falbel <daniel@rstudio.com>
 Repository: CRAN
-Date/Publication: 2021-05-04 17:30:03 UTC
+Date/Publication: 2021-08-17 13:40:02 UTC
