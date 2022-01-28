@@ -1,3 +1,12 @@
+# torchvision 0.4.1
+
+- Implemented MobileNetV2 (#60)
+- Improved vignettes so they use `nnf_cross_entropy` for numerical stability. (#61)
+- Implement the full list of ResNet model family (#66, @cregouby)
+- Improved how datasets and models are downloaded by using a large timeout by default
+  and downloading to temporary file to avoid hard to debug errors when the files are
+  corrupt. (#67)
+
 # torchvision 0.4.0
 
 - Added a dependency on `zip` to `zip::unzip` the tinyimagenet dataset.
