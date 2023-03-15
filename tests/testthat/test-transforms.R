@@ -170,4 +170,45 @@ test_that("affine", {
 
 })
 
+test_that("linear transformation", {
+
+  c <- 3
+  h <- 24
+  w <- 32
+
+  tensor <- torch::torch_randn(c, h, w)
+  matrix <- torch::torch_rand(c * h * w, c * h * w)
+  mean_vector <- torch::torch_rand(c * h * w)
+
+  out <- transform_linear_transformation(tensor, matrix, mean_vector)
+
+  expect_equal(dim(out), c(3, 24, 32))
+})
+
+test_that("adjust hue", {
+
+  hue_factor <- c(-0.45, -0.25, 0.0, 0.25, 0.45)
+  x <- torch::torch_rand(3, 24, 32)
+
+  for (f in hue_factor) {
+    out <- transform_adjust_hue(x, f)
+    expect_equal(dim(out), dim(x))
+  }
+
+})
+
+test_that("random vertical flip", {
+
+  tensor <- torch::torch_randn(3, 24, 32)
+
+  for (i in 1:10) {
+    out <- transform_random_vertical_flip(tensor)
+  }
+  for (p in seq(0, 1, length.out=10)) {
+    out <- transform_random_vertical_flip(tensor, p)
+  }
+
+  expect_equal(dim(out), dim(tensor))
+
+})
 
