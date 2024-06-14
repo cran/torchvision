@@ -7,7 +7,7 @@
 transform_random_rotation(
   img,
   degrees,
-  resample = FALSE,
+  resample = 0,
   expand = FALSE,
   center = NULL,
   fill = NULL
@@ -20,7 +20,8 @@ transform_random_rotation(
 If degrees is a number instead of sequence like (min, max), the range of
 degrees will be (-degrees, +degrees).}
 
-\item{resample}{(int, optional): An optional resampling filter.}
+\item{resample}{(int, optional): An optional resampling filter. See interpolation
+modes.}
 
 \item{expand}{(bool, optional): Optional expansion flag. If true, expands the
 output to make it large enough to hold the entire rotated image. If false
@@ -69,8 +70,8 @@ Other transforms:
 \code{\link{transform_random_perspective}()},
 \code{\link{transform_random_resized_crop}()},
 \code{\link{transform_random_vertical_flip}()},
-\code{\link{transform_resized_crop}()},
 \code{\link{transform_resize}()},
+\code{\link{transform_resized_crop}()},
 \code{\link{transform_rgb_to_grayscale}()},
 \code{\link{transform_rotate}()},
 \code{\link{transform_ten_crop}()},

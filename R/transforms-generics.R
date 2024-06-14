@@ -330,7 +330,8 @@ transform_color_jitter <- function(img, brightness=0, contrast=0, saturation=0, 
 #' @param degrees (sequence or float or int): Range of degrees to select from.
 #'   If degrees is a number instead of sequence like (min, max), the range of
 #'   degrees will be (-degrees, +degrees).
-#' @param resample (int, optional): An optional resampling filter.
+#' @param resample (int, optional): An optional resampling filter. See interpolation
+#'   modes.
 #' @param expand (bool, optional): Optional expansion flag. If true, expands the
 #'   output to make it large enough to hold the entire rotated image. If false
 #'   or omitted, make the output image the same size as the input image. Note
@@ -346,7 +347,7 @@ transform_color_jitter <- function(img, brightness=0, contrast=0, saturation=0, 
 #'
 #' @family transforms
 #' @export
-transform_random_rotation <- function(img, degrees, resample=FALSE, expand=FALSE,
+transform_random_rotation <- function(img, degrees, resample = 0, expand=FALSE,
                                       center=NULL, fill=NULL) {
   UseMethod("transform_random_rotation", img)
 }
@@ -430,7 +431,7 @@ transform_random_perspective <- function(img, distortion_scale=0.5, p=0.5,
 #' Randomly selects a rectangular region in an image and erases its pixel values
 #'
 #' 'Random Erasing Data Augmentation' by Zhong _et al._
-#'   See <https://arxiv.org/pdf/1708.04896.pdf>
+#'   See <https://arxiv.org/pdf/1708.04896>
 #'
 #' @inheritParams transform_to_tensor
 #' @param p probability that the random erasing operation will be performed.
