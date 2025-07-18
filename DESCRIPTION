@@ -1,16 +1,24 @@
 Package: torchvision
 Title: Models, Datasets and Transformations for Images
-Version: 0.6.0
+Version: 0.7.0
 Authors@R: c(
     person(given = "Daniel",
            family = "Falbel",
            role = c("aut", "cre"),
-           email = "daniel@rstudio.com"
+           email = "daniel@posit.co"
            ),
     person(given = "Christophe",
            family = "Regouby",
            role = c("ctb"),
            email = "christophe.regouby@free.fr"
+           ),
+    person(given = "Akanksha", 
+           family = "Koshti", 
+           role = c("ctb")),
+    person(given = "Derrick",
+           family = "Richard",
+           role = c("ctb"),
+           email = "derrickrds@gmail.com"
            ),
     person(family = "RStudio", role = c("cph"))
     )
@@ -22,16 +30,18 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 URL: https://torchvision.mlverse.org,
         https://github.com/mlverse/torchvision
-RoxygenNote: 7.3.1
-Imports: torch (>= 0.5.0), fs, rlang, rappdirs, utils, jpeg, magrittr,
-        png, abind, withr
-Suggests: magick, testthat, coro
+RoxygenNote: 7.3.2
+Imports: torch (>= 0.5.0), fs, rlang, rappdirs, utils, jpeg, tiff,
+        magrittr, png, abind, jsonlite, withr, cli, glue, zeallot
+Suggests: magick, testthat, coro, R.matlab
 BugReports: https://github.com/mlverse/torchvision/issues
 NeedsCompilation: no
-Packaged: 2024-06-14 16:56:26 UTC; dfalbel
+Packaged: 2025-07-18 14:43:09 UTC; dfalbel
 Author: Daniel Falbel [aut, cre],
   Christophe Regouby [ctb],
+  Akanksha Koshti [ctb],
+  Derrick Richard [ctb],
   RStudio [cph]
-Maintainer: Daniel Falbel <daniel@rstudio.com>
+Maintainer: Daniel Falbel <daniel@posit.co>
 Repository: CRAN
-Date/Publication: 2024-06-14 17:20:02 UTC
+Date/Publication: 2025-07-18 16:20:02 UTC
