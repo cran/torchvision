@@ -20,7 +20,7 @@ test_that("tests for the mnist dataset", {
   expect_length(dl, 1875)
   iter <- dataloader_make_iter(dl)
   i <- dataloader_next(iter)
-  expect_tensor_shape(i[[1]], c(32, 1, 28, 28))
+  expect_tensor_shape(i[[1]], c(32, 28, 28))
   expect_tensor_shape(i[[2]], 32)
   expect_true((torch_max(i[[1]]) <= 1)$item())
   expect_named(i, c("x", "y"))
@@ -45,7 +45,7 @@ test_that("tests for the kmnist dataset", {
   expect_length(dl, 1875)
   iter <- dataloader_make_iter(dl)
   i <- dataloader_next(iter)
-  expect_tensor_shape(i[[1]], c(32, 1, 28, 28))
+  expect_tensor_shape(i[[1]], c(32, 28, 28))
   expect_tensor_shape(i[[2]], 32)
   expect_true((torch_max(i[[1]]) <= 1)$item())
   expect_named(i, c("x", "y"))
@@ -69,7 +69,7 @@ test_that("fashion_mnist_dataset loads correctly", {
   dl <- torch::dataloader(ds2, batch_size = 32)
   iter <- dataloader_make_iter(dl)
   batch <- dataloader_next(iter)
-  expect_tensor_shape(batch$x, c(32, 1, 28, 28))
+  expect_tensor_shape(batch$x, c(32, 28, 28))
   expect_tensor_shape(batch$y, 32)
   expect_named(batch, c("x", "y"))
 })
@@ -81,59 +81,64 @@ test_that("tests for the emnist dataset", {
         "Skipping test: set TEST_LARGE_DATASETS=1 to enable tests requiring large downloads.")
 
   expect_error(
-    ds <- emnist_dataset(root = tempfile())
+    ds <- emnist_collection(root = tempfile())
   )
 
-  emnist <- emnist_dataset(dir, split = "balanced", download = TRUE)
-  expect_equal(length(emnist), 112800)
+  emnist <- emnist_collection(dir, dataset = "balanced", download = TRUE)
+  expect_equal(length(emnist), 18800)
   first_item <- emnist[1]
   expect_named(first_item, c("x", "y"))
   expect_true(inherits(first_item$x, "array"))
-  expect_equal((first_item[[2]]), 46)
+  expect_equal((first_item[[2]]), 42)
 
-  emnist <- emnist_dataset(dir, split = "byclass")
-  expect_equal(length(emnist), 697932)
+  emnist <- emnist_collection(dir, dataset = "byclass", split = "test", download = TRUE)
+  expect_equal(length(emnist), 116323)
   first_item <- emnist[1]
   expect_named(first_item, c("x", "y"))
   expect_true(inherits(first_item$x, "array"))
-  expect_equal((first_item[[2]]), 36)
+  expect_equal(dim(first_item$x), c(28,28))
+  expect_equal((first_item[[2]]), 19)
 
-  emnist <- emnist_dataset(dir, split = "bymerge")
-  expect_equal(length(emnist), 697932)
+  emnist <- emnist_collection(dir, dataset = "bymerge", download = TRUE)
+  expect_equal(length(emnist), 116323)
   first_item <- emnist[1]
   expect_named(first_item, c("x", "y"))
   expect_true(inherits(first_item$x, "array"))
   expect_equal((first_item[[2]]), 25)
 
-  emnist <- emnist_dataset(dir, split = "letters")
+  emnist <- emnist_collection(dir, dataset = "letters", split = "train", download = TRUE,
+                           transform = transform_to_tensor)
   expect_equal(length(emnist), 124800)
   first_item <- emnist[1]
   expect_named(first_item, c("x", "y"))
-  expect_true(inherits(first_item$x, "array"))
+  expect_tensor(first_item$x)
+  expect_tensor_shape(first_item$x, c(1,28,28))
   expect_equal((first_item[[2]]), 24)
 
-  emnist <- emnist_dataset(dir, split = "digits")
-  expect_equal(length(emnist), 240000)
+  emnist <- emnist_collection(dir, dataset = "digits", download = TRUE)
+  expect_equal(length(emnist), 40000)
   first_item <- emnist[1]
   expect_named(first_item, c("x", "y"))
   expect_true(inherits(first_item$x, "array"))
-  expect_equal((first_item[[2]]), 9)
+  expect_equal((first_item[[2]]), 1)
 
-  emnist <- emnist_dataset(dir, split = "mnist")
+  emnist <- emnist_collection(dir, dataset = "mnist", split = "train", download = TRUE)
   expect_equal(length(emnist), 60000)
   first_item <- emnist[1]
   expect_named(first_item, c("x", "y"))
   expect_true(inherits(first_item$x, "array"))
   expect_equal((first_item[[2]]), 5)
 
-  ds2 <- emnist_dataset(
+  ds2 <- emnist_collection(
     root = dir,
-    split = "balanced",
-    transform = transform_to_tensor
+    dataset = "balanced",
+    split = "test",
+    transform = transform_to_tensor,
+    download = TRUE
   )
   dl <- torch::dataloader(ds2, batch_size = 32)
-  iter <- dataloader_make_iter(dl)
-  batch <- dataloader_next(iter)
+  iter <- torch::dataloader_make_iter(dl)
+  batch <- torch::dataloader_next(iter)
   expect_tensor_shape(batch$x, c(32, 1, 28, 28))
   expect_tensor_shape(batch$y, 32)
   expect_named(batch, c("x", "y"))
@@ -147,9 +152,7 @@ test_that("tests for the qmnist dataset", {
       "Dataset not found."
   )
 
-  splits <- c("train", "test", "nist")
-
-  for (split in splits) {
+  for (split in c("train", "test", "nist")) {
 
     ds <- qmnist_dataset(dir, split = split, download = TRUE)
 
@@ -163,9 +166,21 @@ test_that("tests for the qmnist dataset", {
     dl <- torch::dataloader(ds, batch_size = 32)
     iter <- dataloader_make_iter(dl)
     i <- dataloader_next(iter)
-    expect_tensor_shape(i[[1]], c(32, 1, 28, 28))
+    expect_tensor_shape(i[[1]], c(32, 28, 28))
     expect_tensor_shape(i[[2]], 32)
     expect_true((torch_max(i[[1]]) <= 1)$item())
     expect_named(i, c("x", "y"))
   }
+})
+
+test_that("tests for the emnist_dataset is deprecated", {
+  skip_on_cran()
+
+  skip_if(Sys.getenv("TEST_LARGE_DATASETS", unset = 0) != 1,
+          "Skipping test: set TEST_LARGE_DATASETS=1 to enable tests requiring large downloads.")
+
+  expect_warning(
+    emnist_dataset(kind = "digits", download = TRUE),
+    "'emnist_dataset' is deprecated."
+  )
 })
