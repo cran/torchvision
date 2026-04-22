@@ -33,7 +33,7 @@ test_that("model_fcn_resnet50 with aux classifier returns aux output", {
 
 test_that("model_fcn_resnet50 loads pretrained weights with 21 classes", {
   model <- model_fcn_resnet50(pretrained = TRUE, num_classes = 21)
-  expect_true(inherits(model, "fcn"))
+  expect_s3_class(model, "fcn")
   model$eval()
 
   input <- torch::torch_randn(2, 3, 224, 224)
@@ -45,7 +45,7 @@ test_that("model_fcn_resnet50 loads pretrained weights with 21 classes", {
 })
 
 test_that("model_fcn_resnet50 can segment a cat", {
-  voc_idx <- setNames(seq_along(torchvision:::voc_segmentation_classes), torchvision:::voc_segmentation_classes)
+  voc_idx <- setNames(seq_along(pascal_voc_classes()), pascal_voc_classes())
 
   model <- model_fcn_resnet50(pretrained = TRUE)
   img <- torch::torch_tensor(jpeg::readJPEG("assets/class/cat/cat.1.jpg"))$permute(c(3,1,2))
@@ -105,5 +105,5 @@ test_that("model_fcn_resnet101 loads pretrained weights", {
   skip_if(Sys.getenv("TEST_LARGE_MODELS", unset = 0) != 1,
           "Skipping test: set TEST_LARGE_MODELS=1 to enable tests requiring large downloads.")
   model <- model_fcn_resnet101(pretrained = TRUE)
-  expect_true(inherits(model, "fcn"))
+  expect_s3_class(model, "fcn")
 })
