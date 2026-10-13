@@ -33,7 +33,7 @@ unlink_model_file <- function() {
   unlink(model_file)
 }
 
-expect_bbox_is_xyxy <- function(object, width, height) {
+expect_bbox_is_xyxy <- function(object, size) {
   expect_tensor(object)
   N <- object$shape[1]
   expect_tensor_shape(object, c(N, 4))
@@ -48,10 +48,10 @@ expect_bbox_is_xyxy <- function(object, width, height) {
               info = "All x_min values must be >= 0.")
   expect_true((y_min >= 0)$all()$item(),
               info = "All y_min values must be >= 0.")
-  expect_true((x_max <= torch_tensor(width))$all()$item(),
-              info = sprintf("All x_max values must be <= width (%s).", width))
-  expect_true((y_max <= torch_tensor(height))$all()$item(),
-              info = sprintf("All y_max values must be <= height (%s).", height))
+  expect_true((x_max <= torch_tensor(size[1]))$all()$item(),
+              info = sprintf("All x_max values must be <= width (%s).", size[1]))
+  expect_true((y_max <= torch_tensor(size[2]))$all()$item(),
+              info = sprintf("All y_max values must be <= height (%s).", size[2]))
   expect_true((x_max > torch_tensor(1))$all()$item(),
               info = "x looks like a relative delta and shall be converted back to image width.")
   expect_true((y_max > torch_tensor(1))$all()$item(),
@@ -63,3 +63,107 @@ expect_bbox_is_xyxy <- function(object, width, height) {
               info = "Each y_min must be smaller than its y_max.")
 
 }
+
+
+# The top detection on this cat image should be the cat class (COCO id 17).
+expect_coco_model_detects_cat <- function(model, min_score = 0.25, size = c(640, 640), strict_bbox_max = TRUE) {
+  input <- base_loader("assets/class/cat/cat.2.jpg") %>%
+    transform_to_tensor() %>%
+    transform_resize(size) %>%
+    transform_normalize(mean = c(0.485, 0.456, 0.406), std = c(0.229, 0.224, 0.225)) %>%
+    torch::torch_unsqueeze(1)
+  model$eval()
+  with_no_grad({
+    out <- model(input)
+  })
+  expect_named(out, "detections")
+  expect_named(out$detections[[1]], c("boxes", "labels", "scores"), ignore.order = TRUE)
+
+  if (!strict_bbox_max) {
+    size <- size * 1.05
+  }
+  expect_bbox_is_xyxy(out$detections[[1]]$boxes, size)
+
+  labels_vec <- as.integer(out$detections[[1]]$labels$cpu())
+  scores_vec <- as.numeric(out$detections[[1]]$scores$cpu())
+  expect_true(all(labels_vec > 0 & labels_vec <= 90))
+  top <- which.max(scores_vec)
+  expect_equal(labels_vec[top], 17L)
+  expect_gt(scores_vec[top], min_score)
+}
+
+#' @importFrom torch torch_rand
+make_segmentation_item <- function(image_size = c(100L, 200L), num_masks = 3L) {
+  x <- torch_randn(3, image_size[1], image_size[2])
+  masks <- torch_rand(num_masks, image_size[1], image_size[2]) > 0.5
+  labels <- torch_ones(num_masks, dtype = torch_long())
+  y <- list(masks = masks, labels = labels, image_height = image_size[1], image_width = image_size[2])
+  class(y) <- c("segmentation_target", "list")
+  item <- list(x = x, y = y)
+  class(item) <- c("image_with_segmentation_mask", "list")
+  item
+}
+
+# Helper to build a detection item target with boxes, labels, image metadata, area and is_crowd (as per coco dataset targets)
+make_detection_target <- function(boxes,
+                        labels = NULL,
+                        image_size = c(100L, 200L),
+                        image_id = sample.int(2^16, 1),
+                        area = NULL,
+                        iscrowd = NULL) {
+  if (is.matrix(boxes)) {
+    boxes <- torch_tensor(boxes, dtype = torch_float32())
+  }
+  if (is.null(labels)) {
+    labels <- torch_ones(boxes$size(1), dtype = torch_long())
+  }
+  if (is.null(area)) {
+    area <- (boxes[, 3] - boxes[, 1]) * (boxes[, 4] - boxes[, 2])
+  }
+  if (is.null(iscrowd)) {
+    iscrowd <- torch_zeros(boxes$size(1), dtype = torch::torch_uint8())
+  }
+  target <- list(
+    boxes = boxes,
+    labels = labels,
+    image_height = image_size[1],
+    image_width = image_size[2],
+    image_id = torch_tensor(image_id, dtype = torch_long()),
+    area = area,
+    iscrowd = iscrowd
+  )
+  class(target) <- c("object_detection_target", "list")
+  target
+}
+
+make_detection_item <- function(boxes, labels = NULL, image_size = c(100L, 200L)) {
+  x <- torch_randn(3, image_size[1], image_size[2])
+  y <- make_detection_target(
+    boxes = boxes,
+    labels = labels,
+    image_size = image_size
+  )
+  item <- list(x = x, y = y)
+  class(item) <- c("image_with_bounding_box", "list")
+  item
+}
+
+# Toy dataset applying its `item_transform` the way the shipped detection and
+# segmentation datasets do, so that `item_transform_*()` can be tested on a
+# dataset without downloading one.
+toy_item_dataset <- torch::dataset(
+  name = "toy_item_dataset",
+  initialize = function(get_item, size = 1L, item_transform = NULL) {
+    self$get_item <- get_item
+    self$size <- size
+    self$item_transform <- item_transform
+  },
+  .getitem = function(index) {
+    item <- self$get_item(index)
+    if (!is.null(self$item_transform)) {
+      item <- self$item_transform(item)
+    }
+    item
+  },
+  .length = function() self$size
+)

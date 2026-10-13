@@ -1,5 +1,5 @@
 
-download_and_cache <- function(url, redownload = FALSE, prefix = NULL) {
+download_and_cache <- function(url, redownload = FALSE, prefix = NULL, progress = TRUE) {
 
   cache_path <- rappdirs::user_cache_dir("torch")
 
@@ -12,13 +12,13 @@ download_and_cache <- function(url, redownload = FALSE, prefix = NULL) {
 
   if (!file.exists(path) || redownload) {
     # we should first download to a temporary file because
-    # download probalems could cause hard to debug errors.
+    # download problems could cause hard to debug errors.
     tmp <- tempfile(fileext = fs::path_ext(path))
     on.exit({try({fs::file_delete(tmp)}, silent = TRUE)}, add = TRUE)
 
     withr::with_options(
       list(timeout = max(600, getOption("timeout", default = 0))),
-      utils::download.file(url, tmp, mode = "wb")
+      utils::download.file(url, tmp, mode = "wb", quiet = !isTRUE(progress))
     )
     fs::file_move(tmp, path)
   }

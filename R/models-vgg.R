@@ -10,7 +10,7 @@ VGG <- torch::nn_module(
       torch::nn_linear(4096, 4096),
       torch::nn_relu(TRUE),
       torch::nn_dropout(),
-      torch::nn_linear(4096, num_classes),
+      torch::nn_linear(4096, num_classes)
     )
 
     if (init_weights)
@@ -31,13 +31,13 @@ VGG <- torch::nn_module(
       if (inherits(m, "nn_conv2d")) {
         torch::nn_init_kaiming_normal_(m$weight, mode = "fan_out", nonlinearity="relu")
         if (!is.null(m$bias))
-          torch::nn_init_constant_(m$bias, 0)
+          nn_init_constant_(m$bias, 0)
       } else if (inherits(m, "nn_batch_norm2d")) {
-        torch::nn_init_constant_(m$weight, 1)
-        torch::nn_init_constant_(m$bias, 0)
+        nn_init_constant_(m$weight, 1)
+        nn_init_constant_(m$bias, 0)
       } else if (inherits(m, "nn_linear")) {
         torch::nn_init_normal_(m$weight, 0, 0.01)
-        torch::nn_init_constant_(m$bias, 0)
+        nn_init_constant_(m$bias, 0)
       }
 
     }
@@ -46,13 +46,20 @@ VGG <- torch::nn_module(
 )
 
 vgg_make_layers <- function(cfg, batch_norm) {
-  layers <- list()
+  n_layers <- sum(vapply(
+    cfg,
+    function(v) if (v == "M") 1L else if (batch_norm) 3L else 2L,
+    integer(1)
+  ))
+  layers <- vector("list", n_layers)
+  k <- 0L
   in_channels <- 3
   for (v in cfg) {
 
     if (v == "M") {
 
-      layers[[length(layers) + 1]] <- torch::nn_max_pool2d(
+      k <- k + 1L
+      layers[[k]] <- torch::nn_max_pool2d(
         kernel_size = 2,
         stride = 2
       )
@@ -60,15 +67,19 @@ vgg_make_layers <- function(cfg, batch_norm) {
     } else {
 
       v <- as.integer(v)
-      layers[[length(layers) + 1]] <- torch::nn_conv2d(
+      k <- k + 1L
+      layers[[k]] <- torch::nn_conv2d(
         in_channels = in_channels, out_channels = v,
         kernel_size = 3, padding = 1
       )
 
-      if (batch_norm)
-        layers[[length(layers) + 1]] <- torch::nn_batch_norm2d(num_features = v)
+      if (batch_norm) {
+        k <- k + 1L
+        layers[[k]] <- torch::nn_batch_norm2d(num_features = v)
+      }
 
-      layers[[length(layers) + 1]] <- torch::nn_relu(inplace = TRUE)
+      k <- k + 1L
+      layers[[k]] <- torch::nn_relu(inplace = TRUE)
       in_channels <- v
 
     }
@@ -109,7 +120,7 @@ vgg <- function(arch, cfg, batch_norm, pretrained, progress, ...) {
   if (pretrained) {
     r <- vgg_model_urls[[arch]]
     cli_inform("Model weights for {.cls {arch}} ({.emph {r[3]}}) will be downloaded and processed if not already available.")
-    state_dict_path <- download_and_cache(r[1])
+    state_dict_path <- download_and_cache(r[1], progress = progress)
     if (!tools::md5sum(state_dict_path) == r[2])
       runtime_error("Corrupt file! Delete the file in {state_dict_path} and try again.")
 
@@ -162,13 +173,13 @@ model_vgg13_bn <- function(pretrained = FALSE, progress = TRUE, ...) {
   vgg("vgg13_bn", "B", TRUE, pretrained, progress, ...)
 }
 
-#' @describeIn model_vgg VGG 13-layer model (configuration "D")
+#' @describeIn model_vgg VGG 16-layer model (configuration "D")
 #' @export
 model_vgg16 <- function(pretrained = FALSE, progress = TRUE, ...) {
   vgg('vgg16', 'D', FALSE, pretrained, progress, ...)
 }
 
-#' @describeIn model_vgg VGG 13-layer model (configuration "D") with batch normalization
+#' @describeIn model_vgg VGG 16-layer model (configuration "D") with batch normalization
 #' @export
 model_vgg16_bn <- function(pretrained = FALSE, progress = TRUE, ...) {
   vgg("vgg16_bn", "D", TRUE, pretrained, progress, ...)

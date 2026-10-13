@@ -43,12 +43,12 @@ A torch::dataset object. Each item is a list with:
 \description{
 The CIFAR datasets are benchmark \strong{classification} datasets composed of
 60,000 RGB thumbnail images of size 32x32 pixels. The
-\href{https://www.cs.toronto.edu/~kriz/cifar.html}{CIFAR10} variant contains
+\href{https://cave.cs.toronto.edu/kriz/cifar.html}{CIFAR10} variant contains
 10 classes while CIFAR100 provides 100 classes. Images are split into
 50,000 training samples and 10,000 test samples.
 
 Downloads and prepares the
-\href{https://www.cs.toronto.edu/~kriz/cifar.html}{CIFAR100} dataset.
+\href{https://cave.cs.toronto.edu/kriz/cifar.html}{CIFAR100} dataset.
 }
 \details{
 Downloads and prepares the CIFAR archives.
@@ -62,20 +62,20 @@ item$y
 }
 }
 \seealso{
-Other classification_dataset: 
+Other classification_dataset:
 \code{\link{caltech_dataset}},
-\code{\link{eurosat_dataset}()},
-\code{\link{fer_dataset}()},
-\code{\link{fgvc_aircraft_dataset}()},
-\code{\link{flowers102_dataset}()},
-\code{\link{image_folder_dataset}()},
+\code{\link[=eurosat_dataset]{eurosat_dataset()}},
+\code{\link[=fer_dataset]{fer_dataset()}},
+\code{\link[=fgvc_aircraft_dataset]{fgvc_aircraft_dataset()}},
+\code{\link[=flowers102_dataset]{flowers102_dataset()}},
+\code{\link[=image_folder_dataset]{image_folder_dataset()}},
 \code{\link{lfw_dataset}},
-\code{\link{mnist_dataset}()},
-\code{\link{oxfordiiitpet_dataset}()},
-\code{\link{places365_dataset}()},
-\code{\link{tiny_imagenet_dataset}()},
-\code{\link{vggface2_dataset}()},
-\code{\link{whoi_plankton_dataset}()},
-\code{\link{whoi_small_coralnet_dataset}()}
+\code{\link[=mnist_dataset]{mnist_dataset()}},
+\code{\link[=oxfordiiitpet_dataset]{oxfordiiitpet_dataset()}},
+\code{\link[=places365_dataset]{places365_dataset()}},
+\code{\link[=tiny_imagenet_dataset]{tiny_imagenet_dataset()}},
+\code{\link[=vggface2_dataset]{vggface2_dataset()}},
+\code{\link[=whoi_plankton_dataset]{whoi_plankton_dataset()}},
+\code{\link[=whoi_small_coralnet_dataset]{whoi_small_coralnet_dataset()}}
 }
 \concept{classification_dataset}

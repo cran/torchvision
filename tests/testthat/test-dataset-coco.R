@@ -22,17 +22,19 @@ test_that("coco_detection_dataset loads a single example correctly", {
   ds <- coco_detection_dataset(root = tmp, train = FALSE, year = "2017", download = TRUE)
 
   expect_s3_class(ds, "coco_detection_dataset")
+  expect_s3_class(ds, "object_detection_dataset")
   expect_gt(length(ds), 0)
 
   item <- ds[1]
   expect_s3_class(item, "image_with_bounding_box")
   y <- item$y
+  expect_s3_class(y, "object_detection_target")
 
   expect_is(item$x, "array")
   expect_length(dim(item$x), 3)
 
   expect_type(y, "list")
-  expect_named(y, c("boxes", "labels", "area", "iscrowd"))
+  expect_named(y, c("boxes", "labels", "area", "iscrowd", "image_height", "image_width"))
 
   expect_tensor(y$boxes)
   expect_equal(y$boxes$ndim, 2)
@@ -85,7 +87,7 @@ test_that("coco_detection_dataset batches correctly using dataloader", {
   expect_true(all(vapply(batch$x, is_torch_tensor, logical(1))))
 
   expect_type(batch$y, "list")
-  expect_named(batch$y[[1]], c("boxes", "labels", "area", "iscrowd"))
+  expect_named(batch$y[[1]], c("boxes", "labels", "area", "iscrowd", "image_height", "image_width"))
   expect_tensor(batch$y[[1]]$boxes)
   expect_equal(batch$y[[1]]$boxes$ndim, 2)
   expect_equal(batch$y[[1]]$boxes$size(2), 4)

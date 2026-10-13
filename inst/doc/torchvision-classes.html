@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>torchvision classes</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">torchvision classes</h1>
+
+
+
+<style>
+.callout-note { margin: 1em 0; padding: .6em .9em; background: #e7f1fd; border-left: 4px solid #0d6efd; border-radius: .25rem;}
+.callout-note::before { content: "Note"; display: block; font-weight: 700; color: #0a58ca; margin-bottom: .25rem;}
+</style>
+<p>All outputs of <a href="https://torchvision.mlverse.org/reference/#datasets">torchvision
+datasets</a> and <a href="https://torchvision.mlverse.org/reference/#models">torchvision
+models</a> inference results are plain R lists of torch tensors. But
+those lists may have very different attributes names and content between
+object detection and semantic segmentation for examples.</p>
+<p>In order to ease the correct mapping of transformations and
+visualization utilities to those diverse objects, we have equipped those
+objects with S3 classes that will automatically dispatch to the right
+method, in a similar way as pytorch vision with TVTensors.</p>
+<p>The different families of transforms use S3 classes internally to
+accept objects as input, modify output classes for correct pipeline
+continuation, and dispatch to the appropriate drawing helpers.</p>
+<p>This article goes through those S3 classes for the user to understand
+their content and usage.</p>
+<p>The code in this vignette is not evaluated when the website is built,
+since most of the code chunks requires a dataset on disk.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(torchvision)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(torch)</span></code></pre></div>
+<div id="what-are-those-s3-classes-made-for" class="section level2">
+<h2>What are those S3 classes made for?</h2>
+<p>A torchvision dataset item is a list of <code>x</code>, the tensor
+image, and <code>y</code>, the target that is also a list containing
+<code>bbox</code> with a [4, N] tensor in case of object-detection
+whereas it will contain <code>mask</code>, a binary tensor in case of a
+semantic-segmentation item.</p>
+<p>Both the image and its bounding boxes (or mask) must stay consistent
+: Rotate the image and the boxes (respectively mask) have to be rotated
+as well; crop it and both have to be cropped the same way. We do not
+want to have different function names for each and every transform for
+each and every object family. So the S3 class on the item is the
+placeholder for the computer-vision task family and will magically
+dispatch the transform accordingly.</p>
+<p>There is a drawback to this: a dataset item or a dataset target that
+has missed to match one of the defined S3 classes will fail at the next
+<code>transform_</code> call or fail to be rendered by drawing helpers
+like <code>draw_bounding_boxes(item)</code>, rather than producing a
+wrong result.</p>
+</div>
+<div id="datasets-items-image-and-targets" class="section level2">
+<h2>Datasets, items, image and targets</h2>
+<p>Indexing a dataset returns an <em>item</em>: a list with
+<code>x</code>, the <em>image</em>, and <code>y</code>, a list of
+everything the dataset associates to the image. <code>y</code> is called
+the <em>target</em>.</p>
+<div class="float">
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NjAgMzMwIiB3aWR0aD0iNjIwIiBoZWlnaHQ9IjMxMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9Iml0ZW0tdGl0bGUgaXRlbS1kZXNjIj4KICA8dGl0bGUgaWQ9Iml0ZW0tdGl0bGUiPkFuYXRvbXkgb2YgYSBkYXRhc2V0IGl0ZW08L3RpdGxlPgogIDxkZXNjIGlkPSJpdGVtLWRlc2MiPkEgZGVjayBvZiBjYXJkcyBzdGFuZGluZyBmb3IgdGhlIGl0ZW1zIG9mIGEgZGF0YXNldC4gVGhlIGZyb250IGNhcmQgY2FycmllcyBhbiB4IHBhbmVsIGhvbGRpbmcgdGhlIGltYWdlIGFuZCBhIHkgcGFuZWwgaG9sZGluZyB0aGUgYW5ub3RhdGlvbnMuIHRyYW5zZm9ybSByZWFjaGVzIHRoZSB4IHBhbmVsLCB0YXJnZXRfdHJhbnNmb3JtIHRoZSB5IHBhbmVsLCBhbmQgaXRlbV90cmFuc2Zvcm0gdGhlIGNhcmQgYXMgYSB3aG9sZS48L2Rlc2M+CiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJ0aXAiIHZpZXdCb3g9IjAgMCA4IDgiIHJlZlg9IjciIHJlZlk9IjQiIG1hcmtlcldpZHRoPSI2IiBtYXJrZXJIZWlnaHQ9IjYiIG9yaWVudD0iYXV0byI+CiAgICAgIDxwYXRoIGQ9Ik0wIDAgTDggNCBMMCA4IFoiIGZpbGw9IiM1ODU4NTgiLz4KICAgIDwvbWFya2VyPgogIDwvZGVmcz4KICA8c3R5bGU+CiAgICAuZGVjayB7IGZpbGw6IG5vbmU7IHN0cm9rZTogI2EwYTBhMDsgc3Ryb2tlLXdpZHRoOiAxLjI7IH0KICAgIC5jYXJkIHsgZmlsbDogI2Y3ZWJiMDsgc3Ryb2tlOiAjNTg1ODU4OyBzdHJva2Utd2lkdGg6IDEuNjsgfQogICAgLnBhbmVsIHsgZmlsbDogI2ZmZmZmZjsgc3Ryb2tlOiAjOGM4YzhjOyBzdHJva2Utd2lkdGg6IDEuMjsgfQogICAgLmdseXBoIHsgZmlsbDogI2VjZWNlYzsgc3Ryb2tlOiAjYjhiOGI4OyBzdHJva2Utd2lkdGg6IDE7IH0KICAgIC5hcnJvdyB7IGZpbGw6IG5vbmU7IHN0cm9rZTogIzU4NTg1ODsgc3Ryb2tlLXdpZHRoOiAxLjQ7IG1hcmtlci1lbmQ6IHVybCgjdGlwKTsgfQogICAgLm5hbWUgeyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxN3B4OyBmaWxsOiAjM2EzYTNhOyB9CiAgICAubm90ZSB7IGZvbnQtZmFtaWx5OiAiSGVsdmV0aWNhIE5ldWUiLCBBcmlhbCwgc2Fucy1zZXJpZjsgZm9udC1zaXplOiAxNHB4OyBmaWxsOiAjNmY2ZjZmOyB9CiAgPC9zdHlsZT4KCiAgPHJlY3QgY2xhc3M9ImRlY2siIHg9IjIwMiIgeT0iMjQiIHdpZHRoPSI0NTAiIGhlaWdodD0iMjAwIiByeD0iNCIvPgogIDxyZWN0IGNsYXNzPSJkZWNrIiB4PSIxODgiIHk9IjM2IiB3aWR0aD0iNDUwIiBoZWlnaHQ9IjIwMCIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iMTc0IiB5PSI0OCIgd2lkdGg9IjQ1MCIgaGVpZ2h0PSIyMDAiIHJ4PSI0Ii8+CiAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjE2MCIgeT0iNjAiIHdpZHRoPSI0NTAiIGhlaWdodD0iMjAwIiByeD0iNCIvPgoKICA8dGV4dCBjbGFzcz0ibmFtZSIgeD0iMTg1IiB5PSIxMDAiPiR4PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIyMTMiIHk9IjEwMCI+dGhlIGltYWdlPC90ZXh0PgogIDxyZWN0IGNsYXNzPSJwYW5lbCIgeD0iMTg1IiB5PSIxMTIiIHdpZHRoPSIxOTAiIGhlaWdodD0iMTEyIi8+CiAgPGNpcmNsZSBjbGFzcz0iZ2x5cGgiIGN4PSIyMTYiIGN5PSIxNDAiIHI9IjExIi8+CiAgPHBhdGggY2xhc3M9ImdseXBoIiBkPSJNMTk2IDIyMyBMMjQwIDE3MiBMMjg0IDIyMyBaIi8+CiAgPHBhdGggY2xhc3M9ImdseXBoIiBkPSJNMjU4IDIyMyBMMzAwIDE4MyBMMzQyIDIyMyBaIi8+CgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSI0MDUiIHk9IjEwMCI+JHk8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5vdGUiIHg9IjQzMyIgeT0iMTAwIj50aGUgYW5ub3RhdGlvbnM8L3RleHQ+CiAgPHJlY3QgY2xhc3M9InBhbmVsIiB4PSI0MDUiIHk9IjExMiIgd2lkdGg9IjE5MCIgaGVpZ2h0PSIxMTIiLz4KICA8cmVjdCBjbGFzcz0iZ2x5cGgiIHg9IjQyNCIgeT0iMTM0IiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjExIiByeD0iNSIvPgogIDxyZWN0IGNsYXNzPSJnbHlwaCIgeD0iNDI0IiB5PSIxNjMiIHdpZHRoPSIxNTAiIGhlaWdodD0iMTEiIHJ4PSI1Ii8+CiAgPHJlY3QgY2xhc3M9ImdseXBoIiB4PSI0MjQiIHk9IjE5MiIgd2lkdGg9IjkyIiBoZWlnaHQ9IjExIiByeD0iNSIvPgoKICA8dGV4dCBjbGFzcz0ibmFtZSIgeD0iMiIgeT0iMTY2Ij5pdGVtX3RyYW5zZm9ybTwvdGV4dD4KICA8cGF0aCBjbGFzcz0iYXJyb3ciIGQ9Ik0xNDggMTYwIEwxNTYgMTYwIi8+CgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyMjgiIHk9IjMxMiI+dHJhbnNmb3JtPC90ZXh0PgogIDxwYXRoIGNsYXNzPSJhcnJvdyIgZD0iTTI4MCAyOTkgTDI4MCAyMzMiLz4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjQzMiIgeT0iMzEyIj50YXJnZXRfdHJhbnNmb3JtPC90ZXh0PgogIDxwYXRoIGNsYXNzPSJhcnJvdyIgZD0iTTUwMCAyOTkgTDUwMCAyMzMiLz4KPC9zdmc+Cg==" alt="A dataset is a deck of items; each item holds an image in $x and its annotations in $y." />
+<div class="figcaption">A dataset is a deck of items; each item holds an
+image in <code>$x</code> and its annotations in <code>$y</code>.</div>
+</div>
+<p>A dataset takes up to three transform arguments, and they reach
+different depths of the <em>item</em> structure. <code>transform</code>
+is handeling <code>x</code> alone, <code>target_transform</code> is
+handeling <code>y</code> alone, and <code>item_transform</code> is
+handeling the item as a whole.</p>
+<p>Classification datasets only offer the first two. Detection and
+segmentation datasets offer all three, because an image cannot be
+rotated or cropped without moving its boxes and masks with it.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ds <span class="ot">&lt;-</span> <span class="fu">coco_detection_dataset</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">train =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">download =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">transform =</span> \(img) img <span class="sc">%&gt;%</span> <span class="fu">transform_to_tensor</span>() <span class="sc">%&gt;%</span> <span class="fu">transform_rgb_to_grayscale</span>(),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">item_transform =</span> \(item) item <span class="sc">%&gt;%</span> <span class="fu">item_transform_resize</span>(<span class="fu">c</span>(<span class="dv">480</span>, <span class="dv">640</span>))</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>)</span></code></pre></div>
+<div id="transform-ordering" class="section level4 callout-note">
+<h4>Transform ordering</h4>
+<p>When multiple transforms are included in a dataset construction, they
+are applied in the following order:</p>
+<ol style="list-style-type: decimal">
+<li><p><code>transform</code>, applied to image</p></li>
+<li><p><code>target_transform</code> if any, applied to target</p></li>
+<li><p><code>item_transform</code> applied to the results of the two
+previous ones onto both image and targets.</p></li>
+</ol>
+</div>
+<div class="callout-note">
+<p><code>transform_to_tensor</code> is doing more work there than it
+looks. A dataset returns <code>x</code> in whatever form it was read in,
+which is the <code>(H, W, 3)</code> channel-last native R array out of
+<code>base_loader()</code> . The item transforms and the drawing helpers
+all want the <code>(C, H, W)</code> tensor that torch models take, so a
+detection or segmentation dataset is nearly always built with
+<code>transform = transform_to_tensor</code>.</p>
+</div>
+<p>The dataset itself gets a S3 class depending on the computer-vision
+task, either <code>object_detection_dataset</code> or
+<code>segmentation_dataset</code> is inserted ahead of torch generic
+class <code>dataset</code>. That class is what lets you hand a whole
+dataset to an item transform:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>ds <span class="ot">&lt;-</span> <span class="fu">item_transform_random_horizontal_flip</span>(ds, <span class="at">p =</span> <span class="fl">0.5</span>)</span></code></pre></div>
+<p>which composes the flip into the dataset’s
+<code>item_transform</code> rather than applying it once.</p>
+</div>
+<div id="classification-and-caption-datasets-and-their-items" class="section level2">
+<h2>Classification and caption datasets and their items</h2>
+<p>The simplest items carry no class at all.
+<code>mnist_dataset()</code>, <code>cifar10_dataset()</code>,
+<code>eurosat_dataset()</code> and the other classification datasets
+return a bare list whose <code>y</code> is the class index:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>mnist <span class="ot">&lt;-</span> <span class="fu">mnist_dataset</span>(<span class="at">root =</span> <span class="fu">tempdir</span>(), <span class="at">download =</span> <span class="cn">TRUE</span>, <span class="at">transform =</span> transform_to_tensor)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">str</span>(mnist[<span class="dv">1</span>])</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; List of 2</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;  $ x:Float [1:1, 1:28, 1:28]</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;  $ y: int 6</span></span></code></pre></div>
+<p><code>flickr8k_caption_dataset()</code> and
+<code>flickr30k_caption_dataset()</code> have the same shape, with a
+character vector of captions in <code>y</code>. Nothing dispatches on
+these items: an image transform goes in through <code>transform</code>,
+and there is no geometry in the target to keep in sync with it.</p>
+</div>
+<div id="detection-datasets-and-their-items" class="section level2">
+<h2>Detection datasets and their items</h2>
+<p><code>coco_detection_dataset()</code>,
+<code>pascal_detection_dataset()</code> and the
+<code>rf100_*_collection()</code>s give their items the class
+<code>image_with_bounding_box</code> and their target the class
+<code>object_detection_target</code>.</p>
+<div class="float">
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzAwIiB3aWR0aD0iNjIwIiBoZWlnaHQ9IjI5MSIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImRldC10aXRsZSBkZXQtZGVzYyI+CiAgPHRpdGxlIGlkPSJkZXQtdGl0bGUiPkFuIGltYWdlX3dpdGhfYm91bmRpbmdfYm94IGl0ZW08L3RpdGxlPgogIDxkZXNjIGlkPSJkZXQtZGVzYyI+QSBjYXJkIHdob3NlIHggcGFuZWwgaG9sZHMgdGhlIGltYWdlIHdpdGggdHdvIGJveGVzIGRyYXduIG9uIGl0LCBhbmQgd2hvc2UgeSBwYW5lbCBsaXN0cyB0aGUgZmllbGRzIG9mIGFuIG9iamVjdF9kZXRlY3Rpb25fdGFyZ2V0OiBib3hlcyBhcyBhbiBOIGJ5IDQgdGVuc29yIGluIHh5eHkgZm9ybWF0LCBsYWJlbHMsIGFyZWEsIGlzY3Jvd2QsIGltYWdlX2hlaWdodCBhbmQgaW1hZ2Vfd2lkdGguPC9kZXNjPgogIDxzdHlsZT4KICAgIC5kZWNrIHsgZmlsbDogbm9uZTsgc3Ryb2tlOiAjYTBhMGEwOyBzdHJva2Utd2lkdGg6IDEuMjsgfQogICAgLmNhcmQgeyBmaWxsOiAjZjdlYmIwOyBzdHJva2U6ICM1ODU4NTg7IHN0cm9rZS13aWR0aDogMS42OyB9CiAgICAucGFuZWwgeyBmaWxsOiAjZmZmZmZmOyBzdHJva2U6ICM4YzhjOGM7IHN0cm9rZS13aWR0aDogMS4yOyB9CiAgICAuZ2x5cGggeyBmaWxsOiAjZWNlY2VjOyBzdHJva2U6ICNiOGI4Yjg7IHN0cm9rZS13aWR0aDogMTsgfQogICAgLmJveCB7IGZpbGw6IG5vbmU7IHN0cm9rZTogIzdhN2E3YTsgc3Ryb2tlLXdpZHRoOiAxLjg7IH0KICAgIC5uYW1lIHsgZm9udC1mYW1pbHk6IE1lbmxvLCBDb25zb2xhcywgIkRlamFWdSBTYW5zIE1vbm8iLCBtb25vc3BhY2U7IGZvbnQtc2l6ZTogMTVweDsgZmlsbDogIzNhM2EzYTsgfQogICAgLnZhbHVlIHsgZm9udC1mYW1pbHk6IE1lbmxvLCBDb25zb2xhcywgIkRlamFWdSBTYW5zIE1vbm8iLCBtb25vc3BhY2U7IGZvbnQtc2l6ZTogMTRweDsgZmlsbDogIzZmNmY2ZjsgfQogICAgLm5vdGUgeyBmb250LWZhbWlseTogIkhlbHZldGljYSBOZXVlIiwgQXJpYWwsIHNhbnMtc2VyaWY7IGZvbnQtc2l6ZTogMTRweDsgZmlsbDogIzZmNmY2ZjsgfQogICAgLmNhcHRpb24geyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxN3B4OyBmaWxsOiAjNTg1ODU4OyB9CiAgPC9zdHlsZT4KCiAgPHJlY3QgY2xhc3M9ImRlY2siIHg9IjcyIiB5PSIyNCIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIxOTYiIHJ4PSI0Ii8+CiAgPHJlY3QgY2xhc3M9ImRlY2siIHg9IjU4IiB5PSIzNiIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIxOTYiIHJ4PSI0Ii8+CiAgPHJlY3QgY2xhc3M9ImRlY2siIHg9IjQ0IiB5PSI0OCIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIxOTYiIHJ4PSI0Ii8+CiAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjMwIiB5PSI2MCIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIxOTYiIHJ4PSI0Ii8+CgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSI1NiIgeT0iOTkiPiR4PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSI4MiIgeT0iOTkiPnRoZSBpbWFnZTwvdGV4dD4KICA8cmVjdCBjbGFzcz0icGFuZWwiIHg9IjU2IiB5PSIxMTAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTI2Ii8+CiAgPGNpcmNsZSBjbGFzcz0iZ2x5cGgiIGN4PSI4NiIgY3k9IjEzOCIgcj0iMTAiLz4KICA8cGF0aCBjbGFzcz0iZ2x5cGgiIGQ9Ik02MCAyMzUgTDEwNiAxNzggTDE1MiAyMzUgWiIvPgogIDxwYXRoIGNsYXNzPSJnbHlwaCIgZD0iTTEzMCAyMzUgTDE3MCAxOTIgTDIxMCAyMzUgWiIvPgogIDxyZWN0IGNsYXNzPSJib3giIHg9Ijc2IiB5PSIxNzAiIHdpZHRoPSI2MiIgaGVpZ2h0PSI1MiIvPgogIDxyZWN0IGNsYXNzPSJib3giIHg9IjE0OCIgeT0iMTQ4IiB3aWR0aD0iODIiIGhlaWdodD0iNjYiLz4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iOTkiPiR5PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIzMTYiIHk9Ijk5Ij5hbiBvYmplY3RfZGV0ZWN0aW9uX3RhcmdldDwvdGV4dD4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMTI0Ij4kYm94ZXM8L3RleHQ+CiAgPHRleHQgY2xhc3M9InZhbHVlIiB4PSI0MjQiIHk9IjEyNCI+KE4sIDQpIHh5eHk8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMTQ1Ij4kbGFiZWxzPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ2YWx1ZSIgeD0iNDI0IiB5PSIxNDUiPk4gY2xhc3MgbmFtZXM8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMTY2Ij4kYXJlYTwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQyNCIgeT0iMTY2Ij4oTik8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMTg3Ij4kaXNjcm93ZDwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQyNCIgeT0iMTg3Ij4oTik8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMjA4Ij4kaW1hZ2VfaGVpZ2h0PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ2YWx1ZSIgeD0iNDI0IiB5PSIyMDgiPkg8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMjI5Ij4kaW1hZ2Vfd2lkdGg8L3RleHQ+CiAgPHRleHQgY2xhc3M9InZhbHVlIiB4PSI0MjQiIHk9IjIyOSI+VzwvdGV4dD4KCiAgPHRleHQgY2xhc3M9Im5vdGUiIHg9IjI5MCIgeT0iMjQ4Ij5vbmx5ICRib3hlcyBpcyBndWFyYW50ZWVkPC90ZXh0PgoKICA8dGV4dCBjbGFzcz0iY2FwdGlvbiIgeD0iMjkwIiB5PSIyODYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPmltYWdlX3dpdGhfYm91bmRpbmdfYm94PC90ZXh0Pgo8L3N2Zz4K" alt="An image_with_bounding_box item and the fields of its object_detection_target." />
+<div class="figcaption">An <code>image_with_bounding_box</code> item and
+the fields of its <code>object_detection_target</code>.</div>
+</div>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>field</th>
+<th>contents</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>$boxes</code></td>
+<td><code>(N, 4)</code> tensor, one row per object, as
+<code>(x_min, y_min, x_max, y_max)</code> in pixels</td>
+</tr>
+<tr class="even">
+<td><code>$labels</code></td>
+<td>the class name of each box</td>
+</tr>
+<tr class="odd">
+<td><code>$area</code></td>
+<td><code>(N)</code> float tensor, the area of each annotation</td>
+</tr>
+<tr class="even">
+<td><code>$iscrowd</code></td>
+<td><code>(N)</code> boolean tensor, <code>TRUE</code> where the
+annotation covers a group of objects rather than one</td>
+</tr>
+<tr class="odd">
+<td><code>$image_height</code>, <code>$image_width</code></td>
+<td>the size <code>x</code> had when the boxes were read</td>
+</tr>
+</tbody>
+</table>
+<p>Only <code>$boxes</code> is guaranteed, since that is the field the
+class is validated on. The rest is whatever the annotations happened to
+carry: the table above is a COCO target, while an RF100 one holds
+<code>$boxes</code>, <code>$labels</code> and an <code>$image_id</code>
+and nothing else.</p>
+<p><code>draw_bounding_boxes()</code> has a method for the item, so it
+finds <code>$x</code>, <code>$y$boxes</code> and <code>$y$labels</code>
+on its own:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>boxed <span class="ot">&lt;-</span> <span class="fu">draw_bounding_boxes</span>(ds[<span class="dv">1</span>])</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">tensor_image_browse</span>(boxed)</span></code></pre></div>
+</div>
+<div id="rotated-box-items" class="section level2">
+<h2>Rotated box items</h2>
+<p>Four numbers per box cannot describe a box that has been rotated, so
+<code>item_transform_rotate()</code> and
+<code>item_transform_affine()</code> return an
+<code>image_with_rotated_box</code> instead of the item they were
+given:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">class</span>(<span class="fu">item_transform_rotate</span>(ds[<span class="dv">1</span>], <span class="at">angle =</span> <span class="dv">15</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;image_with_rotated_box&quot; &quot;list&quot;</span></span></code></pre></div>
+<div class="float">
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzAwIiB3aWR0aD0iNjIwIiBoZWlnaHQ9IjI5MSIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InJvdC10aXRsZSByb3QtZGVzYyI+CiAgPHRpdGxlIGlkPSJyb3QtdGl0bGUiPkFuIGltYWdlX3dpdGhfcm90YXRlZF9ib3ggaXRlbTwvdGl0bGU+CiAgPGRlc2MgaWQ9InJvdC1kZXNjIj5BIGNhcmQgd2hvc2UgeCBwYW5lbCBob2xkcyB0aGUgaW1hZ2Ugd2l0aCB0d28gdGlsdGVkIGJveGVzIGRyYXduIG9uIGl0LCBhbmQgd2hvc2UgeSBwYW5lbCBsaXN0cyB0aGUgZmllbGRzIG9mIGFuIG9iamVjdF9kZXRlY3Rpb25fdGFyZ2V0IHdob3NlIGJveGVzIGFyZSBhbiBOIGJ5IDUgdGVuc29yIGluIHh5eHlyIGZvcm1hdCwgdGhlIGZpZnRoIGNvbHVtbiBob2xkaW5nIHRoZSByb3RhdGlvbiBhbmdsZS48L2Rlc2M+CiAgPHN0eWxlPgogICAgLmRlY2sgeyBmaWxsOiBub25lOyBzdHJva2U6ICNhMGEwYTA7IHN0cm9rZS13aWR0aDogMS4yOyB9CiAgICAuY2FyZCB7IGZpbGw6ICNmN2ViYjA7IHN0cm9rZTogIzU4NTg1ODsgc3Ryb2tlLXdpZHRoOiAxLjY7IH0KICAgIC5wYW5lbCB7IGZpbGw6ICNmZmZmZmY7IHN0cm9rZTogIzhjOGM4Yzsgc3Ryb2tlLXdpZHRoOiAxLjI7IH0KICAgIC5nbHlwaCB7IGZpbGw6ICNlY2VjZWM7IHN0cm9rZTogI2I4YjhiODsgc3Ryb2tlLXdpZHRoOiAxOyB9CiAgICAuYm94IHsgZmlsbDogbm9uZTsgc3Ryb2tlOiAjN2E3YTdhOyBzdHJva2Utd2lkdGg6IDEuODsgfQogICAgLm5hbWUgeyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxNXB4OyBmaWxsOiAjM2EzYTNhOyB9CiAgICAudmFsdWUgeyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxNHB4OyBmaWxsOiAjNmY2ZjZmOyB9CiAgICAubm90ZSB7IGZvbnQtZmFtaWx5OiAiSGVsdmV0aWNhIE5ldWUiLCBBcmlhbCwgc2Fucy1zZXJpZjsgZm9udC1zaXplOiAxNHB4OyBmaWxsOiAjNmY2ZjZmOyB9CiAgICAuY2FwdGlvbiB7IGZvbnQtZmFtaWx5OiBNZW5sbywgQ29uc29sYXMsICJEZWphVnUgU2FucyBNb25vIiwgbW9ub3NwYWNlOyBmb250LXNpemU6IDE3cHg7IGZpbGw6ICM1ODU4NTg7IH0KICA8L3N0eWxlPgoKICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iNzIiIHk9IjI0IiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iNTgiIHk9IjM2IiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iNDQiIHk9IjQ4IiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMzAiIHk9IjYwIiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjU2IiB5PSI5OSI+JHg8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5vdGUiIHg9IjgyIiB5PSI5OSI+dGhlIGltYWdlPC90ZXh0PgogIDxyZWN0IGNsYXNzPSJwYW5lbCIgeD0iNTYiIHk9IjExMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxMjYiLz4KICA8Y2lyY2xlIGNsYXNzPSJnbHlwaCIgY3g9Ijg2IiBjeT0iMTM4IiByPSIxMCIvPgogIDxwYXRoIGNsYXNzPSJnbHlwaCIgZD0iTTYwIDIzNSBMMTA2IDE3OCBMMTUyIDIzNSBaIi8+CiAgPHBhdGggY2xhc3M9ImdseXBoIiBkPSJNMTMwIDIzNSBMMTcwIDE5MiBMMjEwIDIzNSBaIi8+CiAgPHJlY3QgY2xhc3M9ImJveCIgeD0iNzYiIHk9IjE3MCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjUyIiB0cmFuc2Zvcm09InJvdGF0ZSgtMTQgMTA3IDE5NikiLz4KICA8cmVjdCBjbGFzcz0iYm94IiB4PSIxNDgiIHk9IjE0OCIgd2lkdGg9IjgyIiBoZWlnaHQ9IjY2IiB0cmFuc2Zvcm09InJvdGF0ZSgtMTQgMTg5IDE4MSkiLz4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iOTkiPiR5PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIzMTYiIHk9Ijk5Ij5hbiBvYmplY3RfZGV0ZWN0aW9uX3RhcmdldDwvdGV4dD4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iMTI0Ij4kYm94ZXM8L3RleHQ+CiAgPHRleHQgY2xhc3M9InZhbHVlIiB4PSI0MjQiIHk9IjEyNCI+KE4sIDUpIHh5eHlyPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyOTAiIHk9IjE0NSI+JGxhYmVsczwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQyNCIgeT0iMTQ1Ij5OIGNsYXNzIG5hbWVzPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyOTAiIHk9IjE2NiI+JGFyZWE8L3RleHQ+CiAgPHRleHQgY2xhc3M9InZhbHVlIiB4PSI0MjQiIHk9IjE2NiI+KE4pPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyOTAiIHk9IjE4NyI+JGlzY3Jvd2Q8L3RleHQ+CiAgPHRleHQgY2xhc3M9InZhbHVlIiB4PSI0MjQiIHk9IjE4NyI+KE4pPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyOTAiIHk9IjIwOCI+JGltYWdlX2hlaWdodDwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQyNCIgeT0iMjA4Ij5IPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyOTAiIHk9IjIyOSI+JGltYWdlX3dpZHRoPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ2YWx1ZSIgeD0iNDI0IiB5PSIyMjkiPlc8L3RleHQ+CgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIyOTAiIHk9IjI0OCI+dGhlIGZpZnRoIGNvbHVtbiBpcyB0aGUgYW5nbGU8L3RleHQ+CgogIDx0ZXh0IGNsYXNzPSJjYXB0aW9uIiB4PSIyOTAiIHk9IjI4NiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+aW1hZ2Vfd2l0aF9yb3RhdGVkX2JveDwvdGV4dD4KPC9zdmc+Cg==" alt="An image_with_rotated_box item: same target fields, but $boxes has a fifth column." />
+<div class="figcaption">An <code>image_with_rotated_box</code> item:
+same target fields, but <code>$boxes</code> has a fifth column.</div>
+</div>
+<p>The target keeps its <code>object_detection_target</code> class and
+its fields, but <code>$boxes</code> gains a fifth column holding the
+accumulated angle in degrees, the xyxyr format that
+<code>box_xyxy_to_xyxyr()</code> and
+<code>target_transform_rotate()</code> produce.
+<code>draw_bounding_boxes()</code> has a second method for this class
+which draws each box as a polygon through magick rather than as an
+upright rectangle.</p>
+<p>Every item transform has a method for rotated-box items, except
+<code>item_transform_perspective()</code>.</p>
+</div>
+<div id="segmentation-datasets-and-their-items" class="section level2">
+<h2>Segmentation datasets and their items</h2>
+<p><code>coco_segmentation_dataset()</code>,
+<code>pascal_segmentation_dataset()</code>,
+<code>cityscapes_dataset()</code>,
+<code>oxfordiiitpet_segmentation_dataset()</code> and
+<code>rf100_peixos_segmentation_dataset()</code> return
+<code>image_with_segmentation_mask</code> items whose target is a
+<code>segmentation_target</code>.</p>
+<div class="float">
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzAwIiB3aWR0aD0iNjIwIiBoZWlnaHQ9IjI5MSIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InNlZy10aXRsZSBzZWctZGVzYyI+CiAgPHRpdGxlIGlkPSJzZWctdGl0bGUiPkFuIGltYWdlX3dpdGhfc2VnbWVudGF0aW9uX21hc2sgaXRlbTwvdGl0bGU+CiAgPGRlc2MgaWQ9InNlZy1kZXNjIj5BIGNhcmQgd2hvc2UgeCBwYW5lbCBob2xkcyB0aGUgaW1hZ2Ugd2l0aCB0d28gc2hhZGVkIHJlZ2lvbnMgZHJhd24gb24gaXQsIGFuZCB3aG9zZSB5IHBhbmVsIGxpc3RzIHRoZSBmaWVsZHMgb2YgYSBzZWdtZW50YXRpb25fdGFyZ2V0OiBtYXNrcyBhcyBhbiBOIGJ5IEggYnkgVyB0ZW5zb3Igd2l0aCBvbmUgcGxhbmUgcGVyIGNsYXNzLCBsYWJlbHMsIGFuZCB3aGF0ZXZlciBlbHNlIHRoZSBkYXRhc2V0IGFubm90YXRlcy48L2Rlc2M+CiAgPHN0eWxlPgogICAgLmRlY2sgeyBmaWxsOiBub25lOyBzdHJva2U6ICNhMGEwYTA7IHN0cm9rZS13aWR0aDogMS4yOyB9CiAgICAuY2FyZCB7IGZpbGw6ICNmN2ViYjA7IHN0cm9rZTogIzU4NTg1ODsgc3Ryb2tlLXdpZHRoOiAxLjY7IH0KICAgIC5wYW5lbCB7IGZpbGw6ICNmZmZmZmY7IHN0cm9rZTogIzhjOGM4Yzsgc3Ryb2tlLXdpZHRoOiAxLjI7IH0KICAgIC5nbHlwaCB7IGZpbGw6ICNlY2VjZWM7IHN0cm9rZTogI2I4YjhiODsgc3Ryb2tlLXdpZHRoOiAxOyB9CiAgICAubWFzayB7IGZpbGw6ICNjOWQ2Y2Y7IGZpbGwtb3BhY2l0eTogMC43NTsgc3Ryb2tlOiAjN2E3YTdhOyBzdHJva2Utd2lkdGg6IDEuNDsgfQogICAgLm5hbWUgeyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxNXB4OyBmaWxsOiAjM2EzYTNhOyB9CiAgICAudmFsdWUgeyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxNHB4OyBmaWxsOiAjNmY2ZjZmOyB9CiAgICAubm90ZSB7IGZvbnQtZmFtaWx5OiAiSGVsdmV0aWNhIE5ldWUiLCBBcmlhbCwgc2Fucy1zZXJpZjsgZm9udC1zaXplOiAxNHB4OyBmaWxsOiAjNmY2ZjZmOyB9CiAgICAuY2FwdGlvbiB7IGZvbnQtZmFtaWx5OiBNZW5sbywgQ29uc29sYXMsICJEZWphVnUgU2FucyBNb25vIiwgbW9ub3NwYWNlOyBmb250LXNpemU6IDE3cHg7IGZpbGw6ICM1ODU4NTg7IH0KICA8L3N0eWxlPgoKICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iNzIiIHk9IjI0IiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iNTgiIHk9IjM2IiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iZGVjayIgeD0iNDQiIHk9IjQ4IiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KICA8cmVjdCBjbGFzcz0iY2FyZCIgeD0iMzAiIHk9IjYwIiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5NiIgcng9IjQiLz4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjU2IiB5PSI5OSI+JHg8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5vdGUiIHg9IjgyIiB5PSI5OSI+dGhlIGltYWdlPC90ZXh0PgogIDxyZWN0IGNsYXNzPSJwYW5lbCIgeD0iNTYiIHk9IjExMCIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxMjYiLz4KICA8Y2lyY2xlIGNsYXNzPSJnbHlwaCIgY3g9Ijg2IiBjeT0iMTM4IiByPSIxMCIvPgogIDxwYXRoIGNsYXNzPSJnbHlwaCIgZD0iTTYwIDIzNSBMMTA2IDE3OCBMMTUyIDIzNSBaIi8+CiAgPHBhdGggY2xhc3M9ImdseXBoIiBkPSJNMTMwIDIzNSBMMTcwIDE5MiBMMjEwIDIzNSBaIi8+CiAgPHBhdGggY2xhc3M9Im1hc2siIGQ9Ik03OCAyMTggQzcyIDE5MCA5MCAxNjYgMTEwIDE3MiBDMTMwIDE3OCAxMzIgMjA2IDEyMiAyMjAgWiIvPgogIDxwYXRoIGNsYXNzPSJtYXNrIiBkPSJNMTUwIDIxMiBDMTQ2IDE3NiAxODQgMTUyIDIxMCAxNjggQzIzMiAxODIgMjI0IDIxNCAyMDQgMjIwIFoiLz4KCiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI5MCIgeT0iOTkiPiR5PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIzMTYiIHk9Ijk5Ij5hIHNlZ21lbnRhdGlvbl90YXJnZXQ8L3RleHQ+CgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyOTAiIHk9IjEzNCI+JG1hc2tzPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ2YWx1ZSIgeD0iNDAwIiB5PSIxMzQiPihOLCBILCBXKTwvdGV4dD4KICA8dGV4dCBjbGFzcz0ibmFtZSIgeD0iMjkwIiB5PSIxNTkiPiRsYWJlbHM8L3RleHQ+CiAgPHRleHQgY2xhc3M9InZhbHVlIiB4PSI0MDAiIHk9IjE1OSI+b25lIHBlciBwbGFuZTwvdGV4dD4KCiAgPHRleHQgY2xhc3M9Im5vdGUiIHg9IjI5MCIgeT0iMTk2Ij5ubyBmaWVsZCBpcyBndWFyYW50ZWVkOiBhPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIyOTAiIHk9IjIxNiI+ZGF0YXNldCBhbm5vdGF0ZXMgd2hhdCBpdDwvdGV4dD4KICA8dGV4dCBjbGFzcz0ibm90ZSIgeD0iMjkwIiB5PSIyMzYiPmhhcywgYW5kIGluIGl0cyBvd24gd2F5PC90ZXh0PgoKICA8dGV4dCBjbGFzcz0iY2FwdGlvbiIgeD0iMjkwIiB5PSIyODYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPmltYWdlX3dpdGhfc2VnbWVudGF0aW9uX21hc2s8L3RleHQ+Cjwvc3ZnPgo=" alt="An image_with_segmentation_mask item and its segmentation_target." />
+<div class="figcaption">An <code>image_with_segmentation_mask</code>
+item and its <code>segmentation_target</code>.</div>
+</div>
+<p>No field is required here. Segmentation annotations differ far more
+between datasets than detection ones do, so each dataset passes on what
+it reads: polygons in <code>$segmentation</code> for COCO,
+<code>$polygon</code>, <code>$color</code>, <code>$semantic</code> and
+<code>$instance</code> for Cityscapes depending on the requested
+<code>target_type</code>, one-hot <code>$masks</code> for Oxford-IIIT
+Pet and Pascal VOC. <code>$labels</code> is not uniform either: the
+detection datasets name their classes, while
+<code>pascal_segmentation_dataset()</code> numbers the planes of
+<code>$masks</code> that are not empty.</p>
+<p>What <code>draw_segmentation_masks()</code> and the segmentation
+models want is <code>$masks</code>, an <code>(N, H, W)</code> tensor
+with one plane per annotated class. Two target transforms build it from
+raw annotations:</p>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>transform</th>
+<th>reads</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>target_transform_coco_masks()</code></td>
+<td><code>$segmentation</code>, the COCO polygons</td>
+</tr>
+<tr class="even">
+<td><code>target_transform_trimap_masks()</code></td>
+<td><code>$trimap</code>, the three-value Oxford-IIIT Pet mask</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>seg_ds <span class="ot">&lt;-</span> <span class="fu">coco_segmentation_dataset</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">train =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">download =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">transform =</span> transform_to_tensor,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">target_transform =</span> target_transform_coco_masks</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>masked <span class="ot">&lt;-</span> <span class="fu">draw_segmentation_masks</span>(seg_ds[<span class="dv">1</span>])</span></code></pre></div>
+<p><code>coco_segmentation_dataset()</code> only promotes its items to
+<code>image_with_segmentation_mask</code> once <code>$masks</code> is
+there, so without that target transform they stay
+<code>image_with_bounding_box</code>. <code>cityscapes_dataset()</code>
+has no target transform of its own, and its targets have to be turned
+into <code>$masks</code> by hand before they can be drawn.</p>
+</div>
+<div id="slicing-an-image-sahi_split" class="section level2">
+<h2>Slicing an image: <code>sahi_split</code></h2>
+<p>SAHI, Slicing Aided Hyper Inference, cuts a large image into
+overlapping tiles, runs the model on each and puts the results back
+together. The tiling itself is an object:
+<code>prepare_sahi_split()</code> measures an image and returns a
+<code>sahi_split</code>.</p>
+<div class="float">
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzAwIiB3aWR0aD0iNjIwIiBoZWlnaHQ9IjI5MSIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InNhaGktdGl0bGUgc2FoaS1kZXNjIj4KICA8dGl0bGUgaWQ9InNhaGktdGl0bGUiPkEgc2FoaV9zcGxpdCBvYmplY3Q8L3RpdGxlPgogIDxkZXNjIGlkPSJzYWhpLWRlc2MiPkEgc2luZ2xlIGNhcmQsIG5vdCBhIGRlY2ssIGJlY2F1c2Ugb25lIHNwbGl0IGlzIGNvbXB1dGVkIG9uY2UgYW5kIHJldXNlZC4gSXRzIGxlZnQgcGFuZWwgc2hvd3MgYW4gaW1hZ2UgY292ZXJlZCBieSBhIGdyaWQgb2Ygb3ZlcmxhcHBpbmcgY3JvcCB3aW5kb3dzLCBhbmQgaXRzIHJpZ2h0IHBhbmVsIGxpc3RzIHRoZSBmaWVsZHM6IGNyb3Bfd2luZG93cywgc2l6ZSwgb3ZlcmxhcF9zaXplX3JhdGlvLCBpbWFnZV9oZWlnaHQgYW5kIGltYWdlX3dpZHRoLjwvZGVzYz4KICA8c3R5bGU+CiAgICAuY2FyZCB7IGZpbGw6ICNmN2ViYjA7IHN0cm9rZTogIzU4NTg1ODsgc3Ryb2tlLXdpZHRoOiAxLjY7IH0KICAgIC5wYW5lbCB7IGZpbGw6ICNmZmZmZmY7IHN0cm9rZTogIzhjOGM4Yzsgc3Ryb2tlLXdpZHRoOiAxLjI7IH0KICAgIC53aW5kb3cgeyBmaWxsOiAjYzlkNmNmOyBmaWxsLW9wYWNpdHk6IDAuMzg7IHN0cm9rZTogIzdhN2E3YTsgc3Ryb2tlLXdpZHRoOiAxLjI7IH0KICAgIC5uYW1lIHsgZm9udC1mYW1pbHk6IE1lbmxvLCBDb25zb2xhcywgIkRlamFWdSBTYW5zIE1vbm8iLCBtb25vc3BhY2U7IGZvbnQtc2l6ZTogMTVweDsgZmlsbDogIzNhM2EzYTsgfQogICAgLnZhbHVlIHsgZm9udC1mYW1pbHk6IE1lbmxvLCBDb25zb2xhcywgIkRlamFWdSBTYW5zIE1vbm8iLCBtb25vc3BhY2U7IGZvbnQtc2l6ZTogMTRweDsgZmlsbDogIzZmNmY2ZjsgfQogICAgLm5vdGUgeyBmb250LWZhbWlseTogIkhlbHZldGljYSBOZXVlIiwgQXJpYWwsIHNhbnMtc2VyaWY7IGZvbnQtc2l6ZTogMTRweDsgZmlsbDogIzZmNmY2ZjsgfQogICAgLmNhcHRpb24geyBmb250LWZhbWlseTogTWVubG8sIENvbnNvbGFzLCAiRGVqYVZ1IFNhbnMgTW9ubyIsIG1vbm9zcGFjZTsgZm9udC1zaXplOiAxN3B4OyBmaWxsOiAjNTg1ODU4OyB9CiAgPC9zdHlsZT4KCiAgPHJlY3QgY2xhc3M9ImNhcmQiIHg9IjMwIiB5PSI2MCIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIxOTYiIHJ4PSI0Ii8+CgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSI1NiIgeT0iOTkiPmhvdyBvbmUgaW1hZ2UgZ2V0cyB0aWxlZDwvdGV4dD4KICA8cmVjdCBjbGFzcz0icGFuZWwiIHg9IjU2IiB5PSIxMTAiIHdpZHRoPSIxNzAiIGhlaWdodD0iMTI2Ii8+CiAgPHJlY3QgY2xhc3M9IndpbmRvdyIgeD0iNTYiIHk9IjExMCIgd2lkdGg9IjcwIiBoZWlnaHQ9IjU2Ii8+CiAgPHJlY3QgY2xhc3M9IndpbmRvdyIgeD0iMTA2IiB5PSIxMTAiIHdpZHRoPSI3MCIgaGVpZ2h0PSI1NiIvPgogIDxyZWN0IGNsYXNzPSJ3aW5kb3ciIHg9IjE1NiIgeT0iMTEwIiB3aWR0aD0iNzAiIGhlaWdodD0iNTYiLz4KICA8cmVjdCBjbGFzcz0id2luZG93IiB4PSI1NiIgeT0iMTQ1IiB3aWR0aD0iNzAiIGhlaWdodD0iNTYiLz4KICA8cmVjdCBjbGFzcz0id2luZG93IiB4PSIxMDYiIHk9IjE0NSIgd2lkdGg9IjcwIiBoZWlnaHQ9IjU2Ii8+CiAgPHJlY3QgY2xhc3M9IndpbmRvdyIgeD0iMTU2IiB5PSIxNDUiIHdpZHRoPSI3MCIgaGVpZ2h0PSI1NiIvPgogIDxyZWN0IGNsYXNzPSJ3aW5kb3ciIHg9IjU2IiB5PSIxODAiIHdpZHRoPSI3MCIgaGVpZ2h0PSI1NiIvPgogIDxyZWN0IGNsYXNzPSJ3aW5kb3ciIHg9IjEwNiIgeT0iMTgwIiB3aWR0aD0iNzAiIGhlaWdodD0iNTYiLz4KICA8cmVjdCBjbGFzcz0id2luZG93IiB4PSIxNTYiIHk9IjE4MCIgd2lkdGg9IjcwIiBoZWlnaHQ9IjU2Ii8+CgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyNTgiIHk9IjEyOCI+JGNyb3Bfd2luZG93czwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQ0MiIgeT0iMTI4Ij5vbmUgcGVyIHRpbGU8L3RleHQ+CiAgPHRleHQgY2xhc3M9Im5hbWUiIHg9IjI1OCIgeT0iMTUyIj4kc2l6ZTwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQ0MiIgeT0iMTUyIj4oNTEyLCA1MTIpPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyNTgiIHk9IjE3NiI+JG92ZXJsYXBfc2l6ZV9yYXRpbzwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQ0MiIgeT0iMTc2Ij4oMC4yLCAwLjIpPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyNTgiIHk9IjIwMCI+JGltYWdlX2hlaWdodDwvdGV4dD4KICA8dGV4dCBjbGFzcz0idmFsdWUiIHg9IjQ0MiIgeT0iMjAwIj5IPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJuYW1lIiB4PSIyNTgiIHk9IjIyNCI+JGltYWdlX3dpZHRoPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ2YWx1ZSIgeD0iNDQyIiB5PSIyMjQiPlc8L3RleHQ+CgogIDx0ZXh0IGNsYXNzPSJub3RlIiB4PSIyNTgiIHk9IjI0NyI+ZWFjaCB3aW5kb3c6IHRvcCwgbGVmdCwgaGVpZ2h0LCB3aWR0aDwvdGV4dD4KCiAgPHRleHQgY2xhc3M9ImNhcHRpb24iIHg9IjI5MCIgeT0iMjg2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5zYWhpX3NwbGl0PC90ZXh0Pgo8L3N2Zz4K" alt="A sahi_split, drawn as one card rather than a deck, because it is computed once and reused across images." />
+<div class="figcaption">A <code>sahi_split</code>, drawn as one card
+rather than a deck, because it is computed once and reused across
+images.</div>
+</div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>split <span class="ot">&lt;-</span> <span class="fu">prepare_sahi_split</span>(<span class="fu">c</span>(<span class="dv">1000</span>, <span class="dv">1200</span>), <span class="at">size =</span> <span class="fu">c</span>(<span class="dv">512</span>, <span class="dv">512</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">length</span>(split<span class="sc">$</span>crop_windows)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] 9</span></span></code></pre></div>
+<p>It holds <code>$crop_windows</code>, one
+<code>top</code>/<code>left</code>/<code>height</code>/<code>width</code>
+window per tile, and the <code>$size</code>,
+<code>$overlap_size_ratio</code>, <code>$image_height</code> and
+<code>$image_width</code> it was computed from. Keeping it as its own
+object is what lets the same tiling be applied to an image and to its
+target, so the two stay aligned:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>tiled <span class="ot">&lt;-</span> ds[<span class="dv">1</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>split <span class="ot">&lt;-</span> <span class="fu">prepare_sahi_split</span>(tiled<span class="sc">$</span>x, <span class="at">size =</span> <span class="fu">c</span>(<span class="dv">256</span>, <span class="dv">256</span>))</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>crops <span class="ot">&lt;-</span> <span class="fu">transform_sahi_crop</span>(tiled<span class="sc">$</span>x, split)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>targets <span class="ot">&lt;-</span> <span class="fu">target_transform_sahi_crop</span>(tiled<span class="sc">$</span>y, split)</span></code></pre></div>
+<p><code>transform_sahi_crop()</code> returns the tiles stacked as an
+<code>(N, C, H, W)</code> batch.
+<code>target_transform_sahi_crop()</code> returns one target per tile,
+each box clipped to the tile and shifted into its coordinates, and
+<code>$image_height</code> and <code>$image_width</code> set to the size
+of the tile rather than of the original image. A box is kept only if
+what survives the clip is at least <code>min_area_ratio</code> of its
+original area, a tenth by default, so a box grazing the edge of a tile
+is dropped from that tile rather than kept as a sliver.</p>
+<p>Unlike the item transforms, this pair turns one item into many, so
+there is no <code>item_transform_sahi_crop()</code> doing both halves at
+once.</p>
+</div>
+<div id="which-function-takes-which-class" class="section level2">
+<h2>Which function takes which class</h2>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>family</th>
+<th>dispatches on</th>
+<th>acts on</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>transform_*()</code></td>
+<td><code>torch_tensor</code></td>
+<td>the image alone</td>
+</tr>
+<tr class="even">
+<td><code>prepare_sahi_split()</code></td>
+<td><code>numeric</code>, <code>torch_tensor</code>,
+<code>magick-image</code>, <code>dataset</code></td>
+<td>measures an image, returns a <code>sahi_split</code></td>
+</tr>
+<tr class="odd">
+<td><code>target_transform_resize()</code>,
+<code>target_transform_rotate()</code>,
+<code>target_transform_affine()</code>,
+<code>target_transform_sahi_crop()</code></td>
+<td><code>object_detection_target</code></td>
+<td>the target alone</td>
+</tr>
+<tr class="even">
+<td><code>target_transform_coco_masks()</code>,
+<code>target_transform_trimap_masks()</code></td>
+<td><code>segmentation_target</code></td>
+<td>the target alone</td>
+</tr>
+<tr class="odd">
+<td><code>item_transform_*()</code></td>
+<td><code>image_with_bounding_box</code>,
+<code>image_with_rotated_box</code>,
+<code>image_with_segmentation_mask</code>, <code>dataset</code></td>
+<td>image and target together</td>
+</tr>
+<tr class="even">
+<td><code>draw_bounding_boxes()</code></td>
+<td><code>torch_tensor</code>, <code>image_with_bounding_box</code>,
+<code>image_with_rotated_box</code></td>
+<td>draws boxes on the image</td>
+</tr>
+<tr class="odd">
+<td><code>draw_segmentation_masks()</code></td>
+<td><code>torch_tensor</code>,
+<code>image_with_segmentation_mask</code></td>
+<td>overlays masks on the image</td>
+</tr>
+</tbody>
+</table>
+<p>The two groups of target transforms are disjoint, which is why they
+are two rows and not one. The first group moves boxes and is written for
+detection targets only; the second builds <code>$masks</code> out of the
+annotations a segmentation dataset carries. Crossing them is an error
+rather than a silent no-op, so <code>target_transform_rotate()</code> on
+a <code>segmentation_target</code>, or
+<code>target_transform_coco_masks()</code> on an
+<code>object_detection_target</code>, stops with
+<code>not implemented for</code> and the class it was handed.</p>
+<p>Both groups also accept bare lists with the fields their transforms
+require. Transforming a bare list preserves its list class.</p>
+<p>The image transforms are written for <code>torch_tensor</code>. Five
+of them also take a magick image, <code>transform_crop()</code>,
+<code>transform_hflip()</code>, <code>transform_resize()</code>,
+<code>transform_sahi_crop()</code> and
+<code>transform_to_tensor()</code>, and
+<code>transform_to_tensor()</code> alone takes an <code>array</code>, a
+<code>matrix</code> or a <code>list</code>, which is how an image coming
+off a loader gets into a tensor in the first place.</p>
+<p>The item transforms are the most uniform family: each of them takes
+all three item classes and a <code>dataset</code>, apart from
+<code>item_transform_perspective()</code>, which has no rotated-box
+method. Among the target transforms only
+<code>target_transform_rotate()</code> takes a dataset as well. The
+reference index lists each of these families in full.</p>
+<p><code>draw_keypoints()</code> is not generic: it takes an image
+tensor and an <code>(N, K, 2)</code> keypoint tensor.</p>
+<p>Calling any of these on something they have no method for stops with
+an error naming the class it was given, which is usually a sign that a
+target lost its class somewhere along a pipeline.</p>
+</div>
+<div id="building-an-item-by-hand" class="section level2">
+<h2>Building an item by hand</h2>
+<p>Target transforms accept a bare list of annotations. When building a
+complete item for item transforms or drawing functions, give the item
+its task class; the example also gives the target its corresponding
+class:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>img <span class="ot">&lt;-</span> <span class="fu">torch_randint</span>(<span class="dv">0</span>, <span class="dv">255</span>, <span class="at">size =</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">120</span>, <span class="dv">160</span>))<span class="sc">$</span><span class="fu">to</span>(<span class="at">dtype =</span> <span class="fu">torch_uint8</span>())</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">boxes =</span> <span class="fu">torch_tensor</span>(<span class="fu">rbind</span>(<span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">60</span>, <span class="dv">90</span>), <span class="fu">c</span>(<span class="dv">70</span>, <span class="dv">30</span>, <span class="dv">150</span>, <span class="dv">110</span>)), <span class="at">dtype =</span> <span class="fu">torch_float</span>()),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;cat&quot;</span>, <span class="st">&quot;dog&quot;</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">image_height =</span> <span class="dv">120</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">image_width =</span> <span class="dv">160</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="fu">class</span>(y) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;object_detection_target&quot;</span>, <span class="st">&quot;list&quot;</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>item <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">x =</span> img, <span class="at">y =</span> y)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="fu">class</span>(item) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;image_with_bounding_box&quot;</span>, <span class="st">&quot;list&quot;</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="fu">str</span>(item)</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; List of 2</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt;  $ x:Byte [1:3, 1:120, 1:160]</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;  $ y:List of 4</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt;   ..$ boxes       :Float [1:2, 1:4]</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;   ..$ labels      : chr [1:2] &quot;cat&quot; &quot;dog&quot;</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt;   ..$ image_height: num 120</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt;   ..$ image_width : num 160</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;class&quot;)= chr [1:2] &quot;object_detection_target&quot; &quot;list&quot;</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;class&quot;)= chr [1:2] &quot;image_with_bounding_box&quot; &quot;list&quot;</span></span></code></pre></div>
+<p>A segmentation target is built the same way, with
+<code>segmentation_target</code> and
+<code>image_with_segmentation_mask</code>.</p>
+</div>
+<div id="what-models-return" class="section level2">
+<h2>What models return</h2>
+<p>Model outputs are plain lists and carry no class of their own. The
+object detection models return <code>$detections</code>, one element per
+image of the batch, each with <code>$boxes</code>, <code>$labels</code>
+and <code>$scores</code>; the semantic segmentation models return
+<code>$out</code>, the per-class logits. The <a href="visualization-utilities.html">Visualization utilities</a> article
+covers turning either of them into something the drawing helpers can
+render.</p>
+</div>
+<div id="comparison-with-torchvision-tvtensors-advanced" class="section level2">
+<h2>Comparison with torchvision TVTensors (advanced)</h2>
+<p>If you have used the v2 transforms of the Python torchvision, these
+classes cover the same ground as <a href="https://docs.pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#videos-boxes-masks-keypoints">TVTensors</a>,
+but they are attached one level further out.</p>
+<p>A TVTensor is a subclass of <code>torch.Tensor</code>.
+<code>Image</code>, <code>Video</code>, <code>BoundingBoxes</code>,
+<code>Mask</code> and <code>KeyPoints</code> are tensors that know what
+they are, and a <code>BoundingBoxes</code> carries its
+<code>format</code> and its <code>canvas_size</code> as attributes of
+the tensor itself. A v2 transform walks an arbitrary nested sample, a
+dict, a list or a tuple, dispatches on the type of each element it
+finds, hands back the same structure, and passes anything it does not
+recognise through untouched.</p>
+<p>Here the class goes on the list instead. <code>$x</code> and
+<code>$y$boxes</code> are ordinary <code>torch_tensor</code>s, and what
+carries the meaning is <code>image_with_bounding_box</code> on the item
+and <code>object_detection_target</code> on <code>y</code>. Four
+differences follow from that:</p>
+<ul>
+<li>An item is always <code>list(x, y)</code> rather than any nesting
+you like, and the three transform families say which half of it they act
+on instead of one transform traversing the whole sample.</li>
+<li>Box format is not an attribute but the width of <code>$boxes</code>:
+four columns are xyxy, five are xyxyr. What <code>canvas_size</code>
+holds lives in <code>$image_height</code> and <code>$image_width</code>
+on the target.</li>
+<li>A change of geometry changes the class of the item, so
+<code>item_transform_rotate()</code> hands back an
+<code>image_with_rotated_box</code>. On the Python side the object stays
+a <code>BoundingBoxes</code> and the distinction lives in its
+<code>format</code>.</li>
+<li>There is no heuristic for unwrapped input. A v2 transform whose
+sample holds no <code>Image</code> will treat the first plain tensor it
+finds as the image; here a list without its class is an error, not a
+guess.</li>
+</ul>
+<p>Two of the five TVTensors have no counterpart here. There is no video
+support at all, and keypoints are not a class:
+<code>draw_keypoints()</code> takes an image tensor and a keypoint
+tensor and nothing dispatches on either.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -12,6 +12,7 @@ pascal_segmentation_dataset(
   split = "train",
   transform = NULL,
   target_transform = NULL,
+  item_transform = NULL,
   download = FALSE
 )
 
@@ -21,6 +22,7 @@ pascal_detection_dataset(
   split = "train",
   transform = NULL,
   target_transform = NULL,
+  item_transform = NULL,
   download = FALSE
 )
 }
@@ -35,13 +37,18 @@ pascal_detection_dataset(
 
 \item{target_transform}{Optional. A function that transforms the label.}
 
+\item{item_transform}{Optional transform function applied to the whole item, such as
+\code{\link[=item_transform_rotate]{item_transform_rotate()}}, once \code{transform} and \code{target_transform} have been applied.}
+
 \item{download}{Logical. If TRUE, downloads the dataset to \verb{root/}. If the dataset is already present, download is skipped.}
 }
 \value{
-A torch dataset of class \code{pascal_segmentation_dataset}.
+A torch dataset of class \code{pascal_segmentation_dataset}, also
+inheriting \code{segmentation_dataset}.
 
 The returned list inherits class \code{image_with_segmentation_mask}, which allows generic visualization
-utilities to be applied.
+utilities to be applied, and its \code{y} inherits \code{segmentation_target}, which
+target transforms dispatch on.
 
 Each element is a named list with the following structure:
 \itemize{
@@ -54,10 +61,12 @@ Each of the 21 channels corresponds to a Pascal VOC classes
 }
 }
 
-A torch dataset of class \code{pascal_detection_dataset}.
+A torch dataset of class \code{pascal_detection_dataset}, also inheriting
+\code{object_detection_dataset}.
 
 The returned list inherits class \code{image_with_bounding_box}, which allows generic visualization
-utilities to be applied.
+utilities to be applied, and its \code{y} inherits \code{object_detection_target}, which target
+transforms such as \code{\link{target_transform_rotate}()} dispatch on.
 
 Each element is a named list:
 \itemize{
@@ -112,19 +121,20 @@ tensor_image_browse(boxed_img)
 
 }
 \seealso{
-Other segmentation_dataset: 
-\code{\link{coco_segmentation_dataset}()},
-\code{\link{oxfordiiitpet_segmentation_dataset}()},
-\code{\link{rf100_peixos_segmentation_dataset}()}
+Other segmentation_dataset:
+\code{\link[=cityscapes_dataset]{cityscapes_dataset()}},
+\code{\link[=coco_segmentation_dataset]{coco_segmentation_dataset()}},
+\code{\link[=oxfordiiitpet_segmentation_dataset]{oxfordiiitpet_segmentation_dataset()}},
+\code{\link[=rf100_peixos_segmentation_dataset]{rf100_peixos_segmentation_dataset()}}
 
-Other detection_dataset: 
-\code{\link{coco_detection_dataset}()},
-\code{\link{rf100_biology_collection}()},
-\code{\link{rf100_damage_collection}()},
-\code{\link{rf100_document_collection}()},
-\code{\link{rf100_infrared_collection}()},
-\code{\link{rf100_medical_collection}()},
-\code{\link{rf100_underwater_collection}()}
+Other detection_dataset:
+\code{\link[=coco_detection_dataset]{coco_detection_dataset()}},
+\code{\link[=rf100_biology_collection]{rf100_biology_collection()}},
+\code{\link[=rf100_damage_collection]{rf100_damage_collection()}},
+\code{\link[=rf100_document_collection]{rf100_document_collection()}},
+\code{\link[=rf100_infrared_collection]{rf100_infrared_collection()}},
+\code{\link[=rf100_medical_collection]{rf100_medical_collection()}},
+\code{\link[=rf100_underwater_collection]{rf100_underwater_collection()}}
 }
 \concept{detection_dataset}
 \concept{segmentation_dataset}

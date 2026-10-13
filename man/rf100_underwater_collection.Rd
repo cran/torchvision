@@ -9,6 +9,7 @@ rf100_underwater_collection(
   split = c("train", "test", "valid"),
   transform = NULL,
   target_transform = NULL,
+  item_transform = NULL,
   download = FALSE
 )
 }
@@ -20,6 +21,10 @@ rf100_underwater_collection(
 \item{transform}{Optional transform function applied to the image.}
 
 \item{target_transform}{Optional transform function applied to the target.}
+
+\item{item_transform}{Optional transform function applied to the whole item, such as
+\code{\link[=item_transform_rotate]{item_transform_rotate()}}, once \code{transform} and \code{target_transform} have been applied.
+It is only used by \code{.getitem()}, not by the batched \code{.getbatch()}.}
 
 \item{download}{Logical. If TRUE, downloads the dataset if not present at \code{root}.}
 }
@@ -36,7 +41,10 @@ A torch dataset. Each element is a named list with:
 }
 
 The returned item inherits the class \code{image_with_bounding_box} so it can be
-visualised with helper functions such as \code{\link[=draw_bounding_boxes]{draw_bounding_boxes()}}.
+visualised with helper functions such as \code{\link[=draw_bounding_boxes]{draw_bounding_boxes()}}, and its \code{y}
+inherits \code{object_detection_target}, which target transforms such as
+\code{\link[=target_transform_rotate]{target_transform_rotate()}} dispatch on. The collection itself inherits
+\code{object_detection_dataset}.
 }
 \description{
 Loads one of the underwater related RoboFlow 100 Environmental
@@ -61,13 +69,13 @@ tensor_image_browse(boxed)
 
 }
 \seealso{
-Other detection_dataset: 
-\code{\link{coco_detection_dataset}()},
+Other detection_dataset:
+\code{\link[=coco_detection_dataset]{coco_detection_dataset()}},
 \code{\link{pascal_voc_datasets}},
-\code{\link{rf100_biology_collection}()},
-\code{\link{rf100_damage_collection}()},
-\code{\link{rf100_document_collection}()},
-\code{\link{rf100_infrared_collection}()},
-\code{\link{rf100_medical_collection}()}
+\code{\link[=rf100_biology_collection]{rf100_biology_collection()}},
+\code{\link[=rf100_damage_collection]{rf100_damage_collection()}},
+\code{\link[=rf100_document_collection]{rf100_document_collection()}},
+\code{\link[=rf100_infrared_collection]{rf100_infrared_collection()}},
+\code{\link[=rf100_medical_collection]{rf100_medical_collection()}}
 }
 \concept{detection_dataset}

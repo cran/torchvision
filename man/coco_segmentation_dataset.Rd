@@ -10,7 +10,8 @@ coco_segmentation_dataset(
   year = c("2017", "2014"),
   download = FALSE,
   transform = NULL,
-  target_transform = NULL
+  target_transform = NULL,
+  item_transform = NULL
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ coco_segmentation_dataset(
 
 \item{target_transform}{Optional transform function applied to the target.
 Use \code{target_transform_coco_masks} to convert polygon annotations to binary masks.}
+
+\item{item_transform}{Optional transform function applied to the whole item, such as
+\code{\link[=item_transform_rotate]{item_transform_rotate()}}, once \code{transform} and \code{target_transform} have been applied.}
 }
 \value{
 An object of class \code{coco_segmentation_dataset}. Each item is a list:
@@ -38,7 +42,10 @@ An object of class \code{coco_segmentation_dataset}. Each item is a list:
 }
 
 The returned object has S3 class \code{"image_with_segmentation_mask"}
-to enable automatic dispatch by visualization functions such as \code{draw_segmentation_masks()}.
+to enable automatic dispatch by visualization functions such as \code{draw_segmentation_masks()},
+and its \code{y} has S3 class \code{"segmentation_target"} so that target transforms
+such as \code{\link{target_transform_coco_masks}()} dispatch on it. The dataset
+itself inherits \code{"segmentation_dataset"}.
 
 For object detection tasks without segmentation, use \code{\link{coco_detection_dataset}} instead.
 }
@@ -72,9 +79,10 @@ tensor_image_browse(masked)
 \seealso{
 \code{\link{coco_detection_dataset}} for object detection tasks
 
-Other segmentation_dataset: 
-\code{\link{oxfordiiitpet_segmentation_dataset}()},
+Other segmentation_dataset:
+\code{\link[=cityscapes_dataset]{cityscapes_dataset()}},
+\code{\link[=oxfordiiitpet_segmentation_dataset]{oxfordiiitpet_segmentation_dataset()}},
 \code{\link{pascal_voc_datasets}},
-\code{\link{rf100_peixos_segmentation_dataset}()}
+\code{\link[=rf100_peixos_segmentation_dataset]{rf100_peixos_segmentation_dataset()}}
 }
 \concept{segmentation_dataset}

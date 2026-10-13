@@ -8,6 +8,8 @@
 #' @inheritParams mnist_dataset
 #' @param root Character. Root directory where the dataset is stored or will be downloaded to. Files are placed under `root/oxfordiiitpet`.
 #' @param target_type Character. One of \code{"category"} or \code{"binary-category"} (default: \code{"category"}).
+#' @param item_transform Optional transform function applied to the whole item, such as
+#'   [item_transform_rotate()], once `transform` and `target_transform` have been applied.
 #'
 #' @return A torch dataset object \code{oxfordiiitpet_dataset}. Each item is a named list:
 #' - \code{x}: a H x W x 3 integer array representing an RGB image.
@@ -15,6 +17,9 @@
 #' - \code{y$label}: an integer representing the class label, depending on the \code{target_type}:
 #'   - \code{"category"}: an integer in 1–37 indicating the pet breed.
 #'   - \code{"binary-category"}: 1 for Cat, 2 for Dog.
+#'
+#' The dataset inherits \code{segmentation_dataset} and its `y` inherits
+#' \code{segmentation_target}, which target transforms dispatch on.
 #'
 #' @examples
 #' \dontrun{
@@ -63,12 +68,14 @@ oxfordiiitpet_segmentation_dataset <- torch::dataset(
     target_type = "category",
     transform = NULL,
     target_transform = NULL,
+    item_transform = NULL,
     download = FALSE
   ) {
 
     self$root_path <- root
     self$transform <- transform
     self$target_transform <- target_transform
+    self$item_transform <- item_transform
     self$train <- train
     self$target_type <- target_type
     if (train) {
@@ -101,6 +108,8 @@ oxfordiiitpet_segmentation_dataset <- torch::dataset(
     } else {
       self$classes <- c("Cat", "Dog")
     }
+
+    as_segmentation_dataset(self)
 
     cli_inform("{.cls {class(self)[[1]]}} dataset loaded with {self$.length()} images across {length(self$classes)} classes.")
   },
@@ -186,10 +195,10 @@ oxfordiiitpet_segmentation_dataset <- torch::dataset(
       self$classes <- c("Cat","Dog")
     }
 
-    y <- list(
+    y <- as_segmentation_target(list(
       masks = masks,
       label = label
-    )
+    ))
 
     if (!is.null(self$transform)) {
       x <- self$transform(x)
@@ -201,6 +210,11 @@ oxfordiiitpet_segmentation_dataset <- torch::dataset(
 
     result <- list(x = x, y = y)
     class(result) <- c("image_with_segmentation_mask", class(result))
+
+    if (!is.null(self$item_transform)) {
+      result <- self$item_transform(result)
+    }
+
     result
   },
 

@@ -163,13 +163,13 @@ resnet <- torch::nn_module(
     self$avgpool <- torch::nn_adaptive_avg_pool2d(c(1, 1))
     self$fc <- torch::nn_linear(512 * block$public_fields$expansion, num_classes)
 
-    for (m in private$modules_) {
+    for (m in self$modules) {
       if (inherits(m, "nn_conv2d")) {
         torch::nn_init_kaiming_normal_(m$weight, mode=  "fan_out",
                                        nonlinearity = "relu")
       } else if (inherits(m, "nn_batch_norm2d") || inherits(m, "nn_group_norm")) {
-        torch::nn_init_constant_(m$weight, 1)
-        torch::nn_init_constant_(m$bias, 0)
+        nn_init_constant_(m$weight, 1)
+        nn_init_constant_(m$bias, 0)
       }
     }
 
@@ -177,12 +177,12 @@ resnet <- torch::nn_module(
     # so that the residual branch starts with zeros, and each residual block behaves like an identity.
     # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
     if (zero_init_residual) {
-      for (m in private$modules_) {
+      for (m in self$modules) {
 
         if (inherits(m, "bottleneck"))
-          torch::nn_init_constant_(m$bn3$weight, 0)
+          nn_init_constant_(m$bn3$weight, 0)
         else if (inherits(m, "basic_block"))
-          torch::nn_init_constant_(m$bn2$weight, 0)
+          nn_init_constant_(m$bn2$weight, 0)
 
       }
     }
@@ -206,7 +206,7 @@ resnet <- torch::nn_module(
       )
     }
 
-    layers <- list()
+    layers <- vector("list", blocks)
     layers[[1]] <- block(self$inplanes, planes, stride, downsample, self$groups,
             self$base_width, previous_dilation, norm_layer)
     self$inplanes <- planes * block$public_fields$expansion
@@ -243,7 +243,7 @@ resnet <- torch::nn_module(
   if (pretrained) {
     r <- resnet_model_urls[[arch]]
     cli_inform("Model weights for {.cls {arch}} ({.emph {r[3]}}) will be downloaded and processed if not already available.")
-    state_dict_path <- download_and_cache(r[1])
+    state_dict_path <- download_and_cache(r[1], progress = progress)
     if (!tools::md5sum(state_dict_path) == r[2])
       runtime_error("Corrupt file! Delete the file in {state_dict_path} and try again.")
 

@@ -1,6 +1,6 @@
 Package: torchvision
 Title: Models, Datasets and Transformations for Images
-Version: 0.9.0
+Version: 0.10.0
 Authors@R: c(
     person("Tomasz", "Kalinowski", role = c("ctb", "cre"),
            email = "tomasz@posit.co"),
@@ -14,6 +14,10 @@ Authors@R: c(
     person("ANAMASGARD", role = c("ctb")),
     person("Chandraveer", "Singh", role = c("ctb"),
            email = "chandraveersingh1717@gmail.com"),
+    person("Srishti", "Dutta", role = c("ctb"),
+           email = "srishti.dutta1111@gmail.com"),
+    person("Sebastian", "Fischer", role = c("ctb"),
+           email = "sebf.fischer@gmail.com"),
     person("Posit Software, PBC", role = c("cph", "fnd"),
            comment = c(ROR = "03wc8by49"))
     )
@@ -25,9 +29,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 URL: https://torchvision.mlverse.org,
         https://github.com/mlverse/torchvision
-RoxygenNote: 7.3.3
 Imports: torch (>= 0.5.0), fs, rlang, rappdirs, utils, jpeg, tiff,
-        magrittr, png, abind, jsonlite, withr, cli, glue, zeallot
+        magrittr, png, abind, jsonlite, withr, cli (>= 3.6.3), glue,
+        zeallot
 Suggests: arrow, magick, prettyunits, testthat, coro, R.matlab, xml2,
         knitr, rmarkdown, torchvisionlib
 BugReports: https://github.com/mlverse/torchvision/issues
@@ -36,29 +40,34 @@ Collate: 'collection-catalog.R' 'folder-dataset.R'
         'collection-rf100-damage.R' 'collection-rf100-infrared.R'
         'collection-rf100-medical.R' 'collection-rf100-underwater.R'
         'conditions.R' 'dataset-caltech.R' 'dataset-cifar.R'
-        'dataset-coco.R' 'dataset-eurosat.R' 'dataset-fer.R'
-        'dataset-fgvc.R' 'dataset-flickr.R' 'dataset-flowers.R'
-        'dataset-imagenet.R' 'dataset-lfw.R' 'dataset-mnist.R'
-        'dataset-oxfordiiitpet.R' 'dataset-pascal.R'
-        'dataset-places365.R' 'dataset-plankton.R'
+        'dataset-cityscapes.R' 'dataset-classes.R' 'dataset-coco.R'
+        'dataset-eurosat.R' 'dataset-fer.R' 'dataset-fgvc.R'
+        'dataset-flickr.R' 'dataset-flowers.R' 'dataset-imagenet.R'
+        'dataset-lfw.R' 'dataset-mnist.R' 'dataset-oxfordiiitpet.R'
+        'dataset-pascal.R' 'dataset-places365.R' 'dataset-plankton.R'
         'dataset-rf100-peixos.R' 'dataset-vggface2.R' 'extension.R'
-        'globals.R' 'models-alexnet.R' 'models-convnext.R'
-        'models-convnext_detection.R' 'models-convnext_segmentation.R'
-        'models-deeplabv3.R' 'models-efficientnet.R'
-        'models-efficientnetv2.R' 'models-facenet.R'
-        'models-faster_rcnn.R' 'models-fcn.R' 'models-inception.R'
-        'models-mask_rcnn.R' 'models-maxvit.R' 'models-mobilenetv2.R'
-        'models-mobilenetv3.R' 'models-mobilenetv3_large.R'
-        'models-resnet.R' 'models-vgg.R' 'models-vit.R'
-        'ops-box_convert.R' 'ops-boxes.R' 'transforms-array.R'
+        'globals.R' 'item-transforms-geometry.R'
+        'item-transforms-random-geometry.R' 'models-alexnet.R'
+        'models-convnext.R' 'models-convnext_detection.R'
+        'models-convnext_segmentation.R' 'models-deeplabv3.R'
+        'models-efficientnet.R' 'models-efficientnetv2.R'
+        'models-facenet.R' 'models-faster_rcnn.R' 'models-fcn.R'
+        'models-inception.R' 'models-lw_detr.R' 'models-mask_rcnn.R'
+        'models-maxvit.R' 'models-mobilenetv2.R' 'models-mobilenetv3.R'
+        'models-mobilenetv3_large.R' 'models-resnet.R'
+        'models-rfdetr_detection.R' 'models-vgg.R' 'models-vit.R'
+        'ops-box_convert.R' 'ops-boxes.R' 'sahi-split.R'
+        'target-transforms-detection.R'
+        'target-transforms-segmentation.R' 'transforms-array.R'
         'transforms-defaults.R' 'transforms-generics.R'
-        'transforms-magick.R' 'transforms-segmentation.R'
-        'transforms-tensor.R' 'utils.R' 'vision_utils.R'
+        'transforms-magick.R' 'transforms-tensor.R' 'utils.R'
+        'vision-utils.R'
 Depends: R (>= 3.5)
 LazyData: true
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.1
 NeedsCompilation: no
-Packaged: 2026-04-22 13:10:42 UTC; dfalbel
+Packaged: 2026-10-13 21:57:49 UTC; tomasz
 Author: Tomasz Kalinowski [ctb, cre],
   Daniel Falbel [aut, cph],
   Christophe Regouby [ctb],
@@ -66,7 +75,9 @@ Author: Tomasz Kalinowski [ctb, cre],
   Derrick Richard [ctb],
   ANAMASGARD [ctb],
   Chandraveer Singh [ctb],
+  Srishti Dutta [ctb],
+  Sebastian Fischer [ctb],
   Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)
 Maintainer: Tomasz Kalinowski <tomasz@posit.co>
 Repository: CRAN
-Date/Publication: 2026-04-22 14:20:02 UTC
+Date/Publication: 2026-10-13 23:00:02 UTC

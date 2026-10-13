@@ -12,6 +12,9 @@ NULL
 #' @param download Logical. If TRUE, downloads the dataset if not present at `root`.
 #' @param transform Optional transform function applied to the image.
 #' @param target_transform Optional transform function applied to the target.
+#' @param item_transform Optional transform function applied to the whole item, such as
+#'   [item_transform_rotate()], once `transform` and `target_transform` have been applied.
+#'   It is only used by `.getitem()`, not by the batched `.getbatch()`.
 #'
 #' @return A torch dataset. Each element is a named list with:
 #' - `x`: H x W x 3 array representing the image, auto-oriented and stretched to 640 x 640.
@@ -21,7 +24,10 @@ NULL
 #'     - `boxes`: a torch_tensor of shape (N, 4) with bounding boxes, each in \eqn{(x_{min}, y_{min}, x_{max}, y_{max})} format.
 #'
 #' The returned item inherits the class `image_with_bounding_box` so it can be
-#' visualised with helper functions such as [draw_bounding_boxes()].
+#' visualised with helper functions such as [draw_bounding_boxes()], and its `y`
+#' inherits `object_detection_target`, which target transforms such as
+#' [target_transform_rotate()] dispatch on. The collection itself inherits
+#' `object_detection_dataset`.
 #'
 #' @examples
 #' \dontrun{
@@ -130,13 +136,15 @@ rf100_document_collection <- torch::dataset(
       "ca0b96eb696da512eed629895a433bad"
     ),
 
-    size = c(rep(50, 18), 32, 9, 5, 108, 32, 23) * 1e6 # placeholder; optional
+    size = c(rep(50, 18), 32, 9, 5, 108, 32, 23) * 1e6, # placeholder; optional
+    stringsAsFactors = FALSE
   ),
 
   initialize = function(
     dataset, split = c("train", "test", "valid"),
     transform = NULL,
     target_transform = NULL,
+    item_transform = NULL,
     download = FALSE
   ) {
     if (!requireNamespace("arrow", quietly = TRUE)) install.packages("arrow")
@@ -146,6 +154,7 @@ rf100_document_collection <- torch::dataset(
     self$split   <- match.arg(split)
     self$transform <- transform
     self$target_transform <- target_transform
+    self$item_transform <- item_transform
 
     sel <- self$resources$dataset == self$dataset & self$resources$split == self$split
     self$archive_url  <- self$resources$url[sel]
@@ -170,6 +179,8 @@ rf100_document_collection <- torch::dataset(
     } else {
       self$.data <- ads$to_data_frame() %>% subset(lengths(objects$bbox) > 0)
     }
+
+    as_object_detection_dataset(self)
 
     cli_inform("{.cls {class(self)[[1]]}} dataset loaded with {self$.length()} images across {length(self$classes)} classes.")
   },
@@ -200,18 +211,20 @@ rf100_document_collection <- torch::dataset(
     if (length(dim(x)) == 3 && dim(x)[3] == 4) x <- x[, , 1:3, drop = FALSE]
 
     bbox <- df$objects$bbox
-    boxes  <- box_xywh_to_xyxy(torch::torch_tensor(unlist(bbox), dtype = torch::torch_float())$view(c(-1, 4)))
+    boxes  <- box_xywh_to_xyxy(torch_tensor(unlist(bbox), dtype = torch_float())$view(c(-1, 4)))
     labels <- unlist(df$objects$category)
     if (is.null(labels)) {
       labels <- unlist(df$objects$label)
     }
 
-    y <- list(image_id = df$image_id, labels = labels, boxes = boxes)
+    y <- as_object_detection_target(list(image_id = df$image_id, labels = labels, boxes = boxes))
     if (!is.null(self$transform)) x <- self$transform(x)
     if (!is.null(self$target_transform)) y <- self$target_transform(y)
 
     item <- list(x = x, y = y)
     class(item) <- "image_with_bounding_box"
+    if (!is.null(self$item_transform)) item <- self$item_transform(item)
+
     item
   },
 
@@ -241,12 +254,12 @@ rf100_document_collection <- torch::dataset(
       return(obj_df[,c("bbox", "category")])
     }))
     # y step 2 select, and unnest_longer bbox and label
-    unnested_bbox <- box_xywh_to_xyxy(torch::torch_tensor(unlist(unnested_df$bbox), dtype = torch::torch_float())$view(c(-1, 4)))
+    unnested_bbox <- box_xywh_to_xyxy(torch_tensor(unlist(unnested_df$bbox), dtype = torch_float())$view(c(-1, 4)))
     unnested_label <- unlist(unnested_df$category)
     # y step 3 repeat image_id along each of unnested value
     image_id_rep <- rep(df$image_id, lengths(unnested_df$category))
 
-    y <- list(image_id = image_id_rep, labels = unnested_label, boxes = unnested_bbox)
+    y <- as_object_detection_target(list(image_id = image_id_rep, labels = unnested_label, boxes = unnested_bbox))
 
     if (!is.null(self$transform)) {
       x_lst <- self$transform(x_lst)
@@ -257,6 +270,8 @@ rf100_document_collection <- torch::dataset(
 
     item <- list(x = x_lst, y = y)
     class(item) <- "image_with_bounding_box"
+    if (!is.null(self$item_transform)) item <- self$item_transform(item)
+
     item
   },
 

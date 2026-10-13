@@ -25,8 +25,8 @@
 #' ## Weights Selection
 #' - All models use `COCO_WITH_VOC_LABELS_V1` weights, trained on COCO with the
 #'   20 Pascal VOC categories (+ background = 21 classes).
-#' - Backbone weights default to `IMAGENET1K_V1` (supervised ImageNet-1k) when
-#'   `pretrained = FALSE` and `pretrained_backbone = TRUE`.
+#' - Backbone weights `IMAGENET1K_V1` (supervised ImageNet-1k) are loaded when
+#'   `pretrained = FALSE` and `pretrained_backbone = TRUE` (not the default).
 #' - When `pretrained = TRUE`, backbone weights are overridden by the full
 #'   segmentation model weights and `pretrained_backbone` is ignored.
 #' - The auxiliary classifier branch (`aux_loss`) is automatically enabled when
@@ -48,10 +48,11 @@
 #'   pretrained weights.
 #' @param aux_loss Logical or `NULL`. If `TRUE`, adds an auxiliary FCN classifier
 #'   head at an intermediate backbone layer, used as a secondary loss during
-#'   training. If `NULL` (default), inferred from pretrained weights.
+#'   training. If `NULL` (default), `TRUE` when `pretrained = TRUE` (the pretrained
+#'   weights include the auxiliary head), `FALSE` otherwise.
 #' @param pretrained_backbone Logical. If `TRUE` and `pretrained = FALSE`, loads
 #'   `IMAGENET1K_V1` weights for the backbone only. Ignored when `pretrained = TRUE`.
-#'   Default: `TRUE`.
+#'   Default: `FALSE`.
 #'
 #' @examples
 #' \dontrun{
@@ -161,7 +162,7 @@ aspp_module <- torch::nn_module(
   },
   forward = function(x) {
     input_size <- x$shape[3:4]  # Get height and width dimensions
-    res <- list()
+    res <- vector("list", length(self$convs))
 
     for (i in 1:(length(self$convs) - 1)) {
       res[[i]] <- self$convs[[i]](x)
@@ -170,7 +171,7 @@ aspp_module <- torch::nn_module(
     global_feat <- self$convs[[length(self$convs)]](x)
     target_size <- as.integer(input_size)
     global_feat <- nnf_interpolate(global_feat, size = target_size, mode = "bilinear", align_corners = FALSE)
-    res[[length(res) + 1]] <- global_feat
+    res[[length(res)]] <- global_feat
 
     x <- torch_cat(res, dim = 2)
     self$project(x)
@@ -247,8 +248,10 @@ deeplabv3_resnet_factory <- function(arch, block, layers, pretrained, progress,
 
   validate_num_classes(num_classes, pretrained)
 
+  # as documented (and as in torchvision): the auxiliary head is enabled when
+  # loading the pretrained segmentation weights, which contain it.
   if (is.null(aux_loss))
-    aux_loss <- FALSE
+    aux_loss <- pretrained
 
   if (pretrained && pretrained_backbone)
     cli_warn("`pretrained_backbone` ignored when `pretrained = TRUE`." )
@@ -280,7 +283,7 @@ deeplabv3_resnet_factory <- function(arch, block, layers, pretrained, progress,
   if (pretrained) {
     info <- deeplabv3_model_urls[[paste0(arch, "_coco")]]
     cli_inform("Downloading {.cls {arch}} pretrained weights (~{.emph {info[3]}}) ...")
-    state_dict_path <- download_and_cache(info[1], prefix = "deeplabv3")
+    state_dict_path <- download_and_cache(info[1], prefix = "deeplabv3", progress = progress)
     if (tools::md5sum(state_dict_path) != info[2])
       runtime_error("Corrupt file! Delete the file in {state_dict_path} and try again.")
     state_dict <- torch::load_state_dict(state_dict_path)

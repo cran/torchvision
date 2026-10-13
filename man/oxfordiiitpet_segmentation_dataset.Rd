@@ -10,6 +10,7 @@ oxfordiiitpet_segmentation_dataset(
   target_type = "category",
   transform = NULL,
   target_transform = NULL,
+  item_transform = NULL,
   download = FALSE
 )
 }
@@ -24,6 +25,9 @@ oxfordiiitpet_segmentation_dataset(
 
 \item{target_transform}{Optional. A function that transforms the label.}
 
+\item{item_transform}{Optional transform function applied to the whole item, such as
+\code{\link[=item_transform_rotate]{item_transform_rotate()}}, once \code{transform} and \code{target_transform} have been applied.}
+
 \item{download}{Logical. If TRUE, downloads the dataset to \verb{root/}. If the dataset is already present, download is skipped.}
 }
 \value{
@@ -37,6 +41,9 @@ A torch dataset object \code{oxfordiiitpet_dataset}. Each item is a named list:
 \item \code{"binary-category"}: 1 for Cat, 2 for Dog.
 }
 }
+
+The dataset inherits \code{segmentation_dataset} and its \code{y} inherits
+\code{segmentation_target}, which target transforms dispatch on.
 }
 \description{
 The Oxford-IIIT Pet Dataset is a \strong{segmentation} dataset consisting of color images
@@ -76,9 +83,10 @@ tensor_image_browse(overlay)
 
 }
 \seealso{
-Other segmentation_dataset: 
-\code{\link{coco_segmentation_dataset}()},
+Other segmentation_dataset:
+\code{\link[=cityscapes_dataset]{cityscapes_dataset()}},
+\code{\link[=coco_segmentation_dataset]{coco_segmentation_dataset()}},
 \code{\link{pascal_voc_datasets}},
-\code{\link{rf100_peixos_segmentation_dataset}()}
+\code{\link[=rf100_peixos_segmentation_dataset]{rf100_peixos_segmentation_dataset()}}
 }
 \concept{segmentation_dataset}

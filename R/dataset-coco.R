@@ -9,6 +9,8 @@
 #' @param download Logical. If TRUE, downloads the dataset if it's not already present in the \code{root} directory.
 #' @param transform Optional transform function applied to the image.
 #' @param target_transform Optional transform function applied to the target (labels, boxes, etc.).
+#' @param item_transform Optional transform function applied to the whole item, such as
+#'   [item_transform_rotate()], once `transform` and `target_transform` have been applied.
 #'
 #' @return An object of class `coco_detection_dataset`. Each item is a list:
 #' - `x`: a `(C, H, W)` array representing the image.
@@ -18,7 +20,10 @@
 #' - `y$iscrowd`: a boolean `torch_tensor`, where `TRUE` marks the object as part of a crowd.
 #'
 #' The returned object has S3 class \code{"image_with_bounding_box"}
-#' to enable automatic dispatch by visualization functions such as \code{draw_bounding_boxes()}.
+#' to enable automatic dispatch by visualization functions such as \code{draw_bounding_boxes()},
+#' and its `y` has S3 class \code{"object_detection_target"} so that target transforms
+#' such as \code{\link{target_transform_rotate}()} dispatch on it. The dataset itself
+#' inherits \code{"object_detection_dataset"}.
 #'
 #' For instance segmentation tasks, use \code{\link{coco_segmentation_dataset}} instead.
 #'
@@ -72,7 +77,8 @@ coco_detection_dataset <- torch::dataset(
     year = c("2017", "2014"),
     download = FALSE,
     transform = NULL,
-    target_transform = NULL
+    target_transform = NULL,
+    item_transform = NULL
   ) {
 
     year <- match.arg(year)
@@ -84,6 +90,7 @@ coco_detection_dataset <- torch::dataset(
     self$split <- split
     self$transform <- transform
     self$target_transform <- target_transform
+    self$item_transform <- item_transform
     self$archive_size <- self$resources[self$resources$year == year & self$resources$split == split & self$resources$content == "image", ]$size
 
     self$data_dir <- fs::path(root, glue::glue("coco{year}"))
@@ -103,6 +110,7 @@ coco_detection_dataset <- torch::dataset(
     }
 
     self$load_annotations()
+    as_object_detection_dataset(self)
 
     cli_inform("{.cls {class(self)[[1]]}} dataset loaded with {self$.length()} images across {length(self$classes)} classes.")
   },
@@ -125,43 +133,47 @@ coco_detection_dataset <- torch::dataset(
     anns <- self$annotations[self$annotations$image_id == image_id, ]
 
     if (nrow(anns) > 0) {
-      boxes_wh <- torch::torch_tensor(do.call(rbind, anns$bbox), dtype = torch::torch_float())
+      boxes_wh <- torch_tensor(do.call(rbind, anns$bbox), dtype = torch_float())
       boxes <- box_xywh_to_xyxy(boxes_wh)
 
       label_ids <- anns$category_id
       labels <- self$category_names[as.character(label_ids)]
 
-      area <- torch::torch_tensor(anns$area, dtype = torch::torch_float())
-      iscrowd <- torch::torch_tensor(as.logical(anns$iscrowd), dtype = torch::torch_bool())
+      area <- torch_tensor(anns$area, dtype = torch_float())
+      iscrowd <- torch_tensor(as.logical(anns$iscrowd), dtype = torch_bool())
 
     } else {
       # empty annotation
-      boxes <- torch::torch_zeros(c(0, 4), dtype = torch::torch_float())
+      boxes <- torch_zeros(c(0, 4), dtype = torch_float())
       labels <- character()
-      area <- torch::torch_empty(0, dtype = torch::torch_float())
-      iscrowd <- torch::torch_empty(0, dtype = torch::torch_bool())
+      area <- torch_empty(0, dtype = torch_float())
+      iscrowd <- torch_empty(0, dtype = torch_bool())
       anns$segmentation <- list()
     }
 
-    y <- list(
+    y <- as_object_detection_target(list(
       boxes = boxes,
       labels = labels,
       area = area,
-      iscrowd = iscrowd
-    )
+      iscrowd = iscrowd,
+      image_height = height,
+      image_width = width
+    ))
 
     if (!is.null(self$transform)) {
       x <- self$transform(x)
     }
 
     if (!is.null(self$target_transform)) {
-      y$image_height <- height
-      y$image_width <- width
       y <- self$target_transform(y)
     }
 
     result <- list(x = x, y = y)
     class(result) <- c("image_with_bounding_box", class(result))
+
+    if (!is.null(self$item_transform)) {
+      result <- self$item_transform(result)
+    }
 
     result
   },
@@ -237,7 +249,10 @@ coco_detection_dataset <- torch::dataset(
 #' - `y$masks`: a `(N, H, W)` boolean `torch_tensor` containing binary segmentation masks (when using target_transform_coco_masks).
 #'
 #' The returned object has S3 class \code{"image_with_segmentation_mask"}
-#' to enable automatic dispatch by visualization functions such as \code{draw_segmentation_masks()}.
+#' to enable automatic dispatch by visualization functions such as \code{draw_segmentation_masks()},
+#' and its `y` has S3 class \code{"segmentation_target"} so that target transforms
+#' such as \code{\link{target_transform_coco_masks}()} dispatch on it. The dataset
+#' itself inherits \code{"segmentation_dataset"}.
 #'
 #' For object detection tasks without segmentation, use \code{\link{coco_detection_dataset}} instead.
 #'
@@ -271,6 +286,27 @@ coco_segmentation_dataset <- torch::dataset(
   name = "coco_segmentation_dataset",
   inherit = coco_detection_dataset,
 
+  initialize = function(
+    root = tempdir(),
+    train = TRUE,
+    year = c("2017", "2014"),
+    download = FALSE,
+    transform = NULL,
+    target_transform = NULL,
+    item_transform = NULL
+  ) {
+    super$initialize(
+      root = root,
+      train = train,
+      year = year,
+      download = download,
+      transform = transform,
+      target_transform = target_transform,
+      item_transform = item_transform
+    )
+    as_segmentation_dataset(self)
+  },
+
   .getitem = function(index) {
     image_id <- self$image_ids[index]
     image_info <- self$image_metadata[[as.character(image_id)]]
@@ -287,27 +323,27 @@ coco_segmentation_dataset <- torch::dataset(
     if (nrow(anns) > 0) {
       label_ids <- anns$category_id
       labels <- self$category_names[as.character(label_ids)]
-      iscrowd <- torch::torch_tensor(as.logical(anns$iscrowd), dtype = torch::torch_bool())
+      iscrowd <- torch::torch_tensor(as.logical(anns$iscrowd), dtype = torch_bool())
     } else {
       # empty annotation
       labels <- character()
-      iscrowd <- torch::torch_empty(0, dtype = torch::torch_bool())
+      iscrowd <- torch_empty(0, dtype = torch_bool())
       anns$segmentation <- list()
     }
 
-    y <- list(
+    y <- as_segmentation_target(list(
       labels = labels,
       iscrowd = iscrowd,
-      segmentation = anns$segmentation
-    )
+      segmentation = anns$segmentation,
+      image_height = height,
+      image_width = width
+    ))
 
     if (!is.null(self$transform)) {
       x <- self$transform(x)
     }
 
     if (!is.null(self$target_transform)) {
-      y$image_height <- height
-      y$image_width <- width
       y <- self$target_transform(y)
     }
 
@@ -317,6 +353,11 @@ coco_segmentation_dataset <- torch::dataset(
     if (!is.null(y$masks)) {
       class(result) <- c("image_with_segmentation_mask", class(result))
     }
+
+    if (!is.null(self$item_transform)) {
+      result <- self$item_transform(result)
+    }
+
     result
   }
 )

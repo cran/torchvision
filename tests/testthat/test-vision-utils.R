@@ -1,15 +1,123 @@
 context("vision-utils")
 
-test_that("vision_make_grid", {
-
+test_that("vision_make_grid works with 4D batch tensor", {
   images <- torch::torch_randn(c(4, 3, 16, 16))
+  grid <- vision_make_grid(images, per_row = 2, padding = 0)
+  expect_tensor_shape(grid, c(3, 32, 32))
+  expect_equal_to_r(grid$max() - grid$min(), 1, tolerance = 1e-4)
+})
 
-  grid <- vision_make_grid(images, num_rows = 2, padding = 0)
+test_that("vision_make_grid preserves positional scale, width and padding", {
+  images <- torch::torch_full(c(6, 3, 2, 3), 0.5)
 
+  grid <- vision_make_grid(images, FALSE, 4)
+  expect_tensor_shape(grid, c(3, 10, 22))
+  expect_equal_to_r(grid[, 3:4, 3:5], array(0.5, c(3, 2, 3)))
 
-  expect_equal(grid$size(), c(3, 32, 32))
-  expect_equal(as.numeric(grid$max() - grid$min()), 1, tolerance = 1e-4)
+  grid <- vision_make_grid(images, FALSE, 4, 1, 0.25)
+  expect_tensor_shape(grid, c(3, 7, 17))
+  expect_equal_to_r(grid[, 1, ], matrix(0.25, 3, 17))
+  expect_equal_to_r(grid[, 2:3, 2:4], array(0.5, c(3, 2, 3)))
+})
 
+test_that("vision_make_grid matches mixed positional and named legacy arguments", {
+  images <- torch::torch_full(c(6, 3, 2, 3), 0.5)
+  grid <- vision_make_grid(images, FALSE, 1, num_rows = 4, pad_value = 0.25)
+
+  expect_tensor_shape(grid, c(3, 7, 17))
+  expect_equal_to_r(grid[, 1, ], matrix(0.25, 3, 17))
+  expect_equal_to_r(grid[, 2:3, 2:4], array(0.5, c(3, 2, 3)))
+
+  grid <- vision_make_grid(images, 4, scale = FALSE, padding = 0)
+  expect_tensor_shape(grid, c(3, 4, 12))
+  expected <- array(0, c(3, 4, 12))
+  expected[, 1:2, ] <- 0.5
+  expected[, 3:4, 1:6] <- 0.5
+  expect_equal_to_r(grid, expected)
+})
+
+test_that("vision_make_grid evaluates legacy arguments once", {
+  calls <- 0L
+  grid <- vision_make_grid({
+    calls <- calls + 1L
+    torch::torch_full(c(2, 3, 2, 3), 0.5)
+  }, { calls <- calls + 1L; FALSE }, 1, 0)
+
+  expect_identical(calls, 2L)
+  expect_tensor_shape(grid, c(3, 4, 3))
+  expect_equal_to_r(grid, array(0.5, c(3, 4, 3)))
+})
+
+test_that("vision_make_grid works with multiple 3D tensors in ...", {
+  imgs <- lapply(1:4, function(i) torch::torch_randn(c(3, 16, 16)))
+  grid <- vision_make_grid(imgs[[1]], imgs[[2]], imgs[[3]], imgs[[4]], per_row = 2, padding = 0)
+  expect_tensor_shape(grid, c(3, 32, 32))
+  expect_equal_to_r(grid$max() - grid$min(), 1, tolerance = 1e-4)
+})
+
+test_that("vision_make_grid works with multiple 4D tensors in ...", {
+  batch1 <- torch::torch_randn(c(2, 3, 16, 16))
+  batch2 <- torch::torch_randn(c(2, 3, 16, 16))
+  grid <- vision_make_grid(batch1, batch2, per_row = 2, padding = 0)
+  expect_tensor_shape(grid, c(3, 32, 32))
+})
+
+test_that("vision_make_grid normalizes single uint8 4D batch to float [0,1]", {
+  images <- torch::torch_randint(0L, 256L, size = c(4, 3, 16, 16))$to(torch::torch_uint8())
+  grid <- vision_make_grid(images, per_row = 2, padding = 0, scale = FALSE)
+  expect_tensor_shape(grid, c(3, 32, 32))
+  expect_tensor_dtype(grid, torch::torch_float32())
+  expect_gte(grid$min()$item(), 0)
+  expect_lte(grid$max()$item(), 1)
+})
+
+test_that("vision_make_grid normalizes mixed uint8/float inputs to float [0,1]", {
+  img_float <- torch::torch_rand(c(3, 16, 16))
+  img_uint8 <- torch::torch_randint(0L, 256L, size = c(3, 16, 16))$to(torch::torch_uint8())
+  grid <- vision_make_grid(img_float, img_uint8, per_row = 2, padding = 0, scale = FALSE)
+  expect_tensor_shape(grid, c(3, 16, 32))
+  expect_tensor_dtype(grid, torch::torch_float32())
+  expect_gte(grid$min()$item(), 0)
+  expect_lte(grid$max()$item(), 1)
+})
+
+test_that("vision_make_grid errors when ... contains non-matching types", {
+  img <- torch::torch_randn(c(3, 16, 16))
+  expect_error(vision_make_grid(img, "not_a_tensor"), "<torch_tensor>")
+})
+
+test_that("vision_make_grid errors on mixed 3D/4D tensors in ...", {
+  t3d <- torch::torch_randn(c(3, 16, 16))
+  t4d <- torch::torch_randn(c(2, 3, 16, 16))
+  expect_error(vision_make_grid(t3d, t4d), "same number of dimensions")
+})
+
+test_that("vision_make_grid works with magick-image", {
+  skip_if_not_installed("magick")
+  imgs <- magick::image_read(rep(system.file("img", "Rlogo.png", package = "png"), 4))
+  h <- magick::image_info(imgs[1])$height
+  w <- magick::image_info(imgs[1])$width
+  grid <- vision_make_grid(imgs, per_row = 2, padding = 0)
+  expect_tensor_shape(grid, c(3L, 2L * h, 2L * w))
+
+  positional <- vision_make_grid(imgs, FALSE, 2, 0)
+  expect_tensor_shape(positional, c(3L, 2L * h, 2L * w))
+  expect_warning(alias <- vision_make_grid(imgs, num_rows = 2, padding = 0),
+                 class = "deprecated")
+  expect_equal_to_r(alias, as.array(grid))
+})
+
+test_that("vision_make_grid errors on unsupported type", {
+  expect_error(vision_make_grid(list(1, 2, 3)), "is not supported by")
+})
+
+test_that("vision_make_grid emits deprecation warning for num_rows", {
+  images <- torch::torch_randn(c(4, 3, 16, 16))
+  expect_warning(
+    grid <- vision_make_grid(images, num_rows = 2, padding = 0),
+    class = "deprecated"
+  )
+  expect_tensor_shape(grid, c(3, 32, 32))
 })
 
 test_that("draw_bounding_boxes works", {
@@ -33,6 +141,153 @@ test_that("draw_bounding_boxes works", {
   expect_no_error(bboxed_image <- draw_bounding_boxes(image_uint, boxes, colors = "black", fill = TRUE))
 })
 
+test_that("draw_bounding_boxes lazy=TRUE silently filters degenerate boxes", {
+  image <- torch::torch_randint(1L, 200L, c(3L, 100L, 100L))$to(torch::torch_uint8())
+  valid_boxes <- torch::torch_tensor(rbind(c(10, 10, 50, 50), c(20, 20, 80, 80)))
+  bad_box     <- torch::torch_tensor(rbind(c(50, 10, 10, 50)))  # xmin > xmax
+  mixed_boxes <- torch::torch_cat(list(valid_boxes, bad_box), dim = 1)
+
+  expect_no_warning(result <- draw_bounding_boxes(image, mixed_boxes, lazy = TRUE))
+  expect_tensor_shape(result, c(3L, 100L, 100L))
+  expect_tensor_dtype(result, torch::torch_uint8())
+})
+
+test_that("draw_bounding_boxes keeps labels and colors attached to surviving boxes", {
+  image <- torch::torch_zeros(3, 100, 300, dtype = torch::torch_uint8())
+  coordinates <- rbind(c(10, 20, 80, 80), c(110, 20, 180, 80), c(210, 20, 280, 80))
+  labels <- c("first", "middle", "last")
+  colors <- c("red", "green", "blue")
+
+  for (rotated in c(FALSE, TRUE)) {
+    for (invalid in seq_len(3)) {
+      mixed <- coordinates
+      mixed[invalid, 3] <- mixed[invalid, 1]
+      if (rotated) mixed <- cbind(mixed, c(15, 30, 45))
+      boxes <- torch::torch_tensor(mixed)
+      keep <- seq_len(3) != invalid
+
+      expected <- draw_bounding_boxes(
+        image, boxes[keep, ], labels = labels[keep], colors = colors[keep], fill = TRUE
+      )
+      actual <- draw_bounding_boxes(image, boxes, labels = labels, colors = colors, fill = TRUE)
+      expect_equal(as_array(actual), as_array(expected))
+    }
+  }
+})
+
+test_that("draw_bounding_boxes filters tensor labels with a single surviving box", {
+  image <- torch::torch_zeros(3, 100, 200, dtype = torch::torch_uint8())
+  coordinates <- rbind(c(10, 20, 80, 80), c(110, 20, 180, 80))
+  labels <- torch::torch_tensor(c(101L, 202L))
+
+  for (invalid in seq_len(2)) {
+    mixed <- coordinates
+    mixed[invalid, 4] <- mixed[invalid, 2] - 1
+    boxes <- torch::torch_tensor(mixed)
+    keep <- seq_len(2) != invalid
+
+    expected <- draw_bounding_boxes(image, boxes[keep, ], labels = labels[keep], colors = "red")
+    actual <- draw_bounding_boxes(image, boxes, labels = labels, colors = "red")
+    expect_equal(as_array(actual), as_array(expected))
+  }
+})
+
+test_that("draw_bounding_boxes supports shared and per-box annotations when filtering", {
+  image <- torch::torch_zeros(3, 100, 400, dtype = torch::torch_uint8())
+  coordinates <- rbind(
+    c(10, 20, 80, 80), c(110, 20, 180, 80),
+    c(210, 20, 280, 80), c(310, 20, 380, 80)
+  )
+  annotations <- list(
+    list(labels = "box", colors = "red"),
+    list(labels = "box", colors = c("red", "green", "blue", "yellow")),
+    list(labels = c("first", "second", "third", "fourth"), colors = "red"),
+    list(labels = c("first", "second", "third", "fourth"), colors = NULL),
+    list(labels = NULL, colors = c("red", "green", "blue", "yellow"))
+  )
+
+  for (invalid in list(1L, 2L, 4L, c(1L, 4L))) {
+    mixed <- coordinates
+    mixed[invalid, 3] <- mixed[invalid, 1] - 1
+    boxes <- torch::torch_tensor(mixed)
+    keep <- !seq_len(4) %in% invalid
+
+    for (annotation in annotations) {
+      labels <- if (!is.null(annotation$labels)) rep(annotation$labels, length.out = 4)[keep]
+      colors <- if (!is.null(annotation$colors)) rep(annotation$colors, length.out = 4)[keep]
+      expected <- draw_bounding_boxes(image, boxes[keep, ], labels = labels, colors = colors)
+      actual <- draw_bounding_boxes(
+        image, boxes, labels = annotation$labels, colors = annotation$colors
+      )
+      expect_equal(as_array(actual), as_array(expected))
+    }
+  }
+})
+
+test_that("draw_bounding_boxes rejects partial recycling of annotations", {
+  image <- torch::torch_zeros(3, 100, 100, dtype = torch::torch_uint8())
+  coordinates <- matrix(rep(c(10, 10, 50, 50), 6), ncol = 4, byrow = TRUE)
+
+  for (invalid in list(integer(0), 2L, seq_len(6))) {
+    mixed <- coordinates
+    mixed[invalid, 3] <- mixed[invalid, 1]
+    boxes <- torch::torch_tensor(mixed)
+
+    for (n in c(0L, 2L, 3L, 7L)) {
+      expect_error(
+        draw_bounding_boxes(image, boxes, labels = rep("box", n)),
+        "must be 1 or match the number of boxes"
+      )
+      expect_error(
+        draw_bounding_boxes(image, boxes, colors = rep("red", n)),
+        "colors vector must contain one color or one color per box"
+      )
+    }
+  }
+})
+
+test_that("draw_bounding_boxes validates annotation lengths against unfiltered boxes", {
+  image <- torch::torch_zeros(3, 100, 100, dtype = torch::torch_uint8())
+  boxes <- torch::torch_tensor(rbind(
+    c(10, 10, 50, 50), c(20, 20, 80, 80), c(50, 10, 10, 50)
+  ))
+
+  expect_error(draw_bounding_boxes(image, boxes, labels = c("a", "b")), "Number of labels")
+  expect_error(draw_bounding_boxes(image, boxes, colors = c("red", "blue")), "colors vector")
+})
+
+test_that("draw_bounding_boxes lazy=FALSE errors on first degenerate box", {
+  image <- torch::torch_randint(1L, 200L, c(3L, 100L, 100L))$to(torch::torch_uint8())
+  # first box valid, second degenerate (index 2 should be reported)
+  boxes <- torch::torch_tensor(rbind(
+    c(10, 10, 50, 50),
+    c(50, 10, 10, 50)   # xmin > xmax
+  ))
+
+  expect_error(
+    draw_bounding_boxes(image, boxes, lazy = FALSE),
+    "is not in valid xyxy format"
+  )
+})
+
+test_that("draw_bounding_boxes lazy=TRUE warns when all boxes are degenerate", {
+  image <- torch::torch_randint(1L, 200L, c(3L, 100L, 100L))$to(torch::torch_uint8())
+  bad_boxes <- torch::torch_tensor(rbind(
+    c(50, 10, 10, 50),  # xmin > xmax
+    c(20, 80, 60, 20)   # ymin > ymax
+  ))
+
+  for (labels in list(NULL, "box", c("first", "second"), torch::torch_tensor(c(1L, 2L)))) {
+    for (colors in list(NULL, "red", c("red", "blue"))) {
+      expect_warning(
+        result <- draw_bounding_boxes(image, bad_boxes, labels = labels, colors = colors),
+        regexp = "No valid bounding box"
+      )
+      expect_identical(result, image)
+    }
+  }
+})
+
 test_that("draw_bounding_boxes correctly mask a complete image", {
 
   image_float <- 1 - (torch::torch_randn(c(3, 360, 360)) / 20)
@@ -47,24 +302,64 @@ test_that("draw_bounding_boxes correctly mask a complete image", {
 
 })
 
-test_that("draw_bounding_boxes supports deprecated color alias", {
-  image_uint <- torch::torch_randint(low = 1, high = 240, size = c(3, 64, 64))$to(torch::torch_uint8())
-  boxes <- torch::torch_tensor(c(1, 1, 40, 40))$unsqueeze(1)
+test_that("draw_bounding_boxes draws each rotated box as a separate tight rectangle", {
 
-  expect_warning(
-    bboxed_image <- draw_bounding_boxes(image_uint, boxes, color = "black", fill = TRUE),
-    "deprecated"
-  )
-  expect_tensor_dtype(bboxed_image, torch::torch_uint8())
-  expect_tensor_shape(bboxed_image, c(3, 64, 64))
+  H <- 200
+  W <- 300
+  image <- torch::torch_zeros(3, H, W)
+  boxes <- torch::torch_tensor(rbind(
+    c(60, 60, 90, 90),
+    c(210, 110, 240, 140)
+  ), dtype = torch::torch_float32())
+
+  item <- list(x = image, y = list(boxes = boxes, labels = c("a", "b"),
+                                   image_height = H, image_width = W))
+  class(item) <- c("image_with_bounding_box", "list")
+
+  rotated <- item_transform_rotate(item, angle = 30, expand = FALSE)
+  drawn <- draw_bounding_boxes(rotated, colors = "red", width = 3)
+  red <- as_array(drawn[1, , ]$to(dtype = torch::torch_float()))
+
+  boxes_r <- as.matrix(rotated$y$boxes$to(device = "cpu"))
+  xmin <- boxes_r[, 1]; ymin <- boxes_r[, 2]
+  xmax <- boxes_r[, 3]; ymax <- boxes_r[, 4]
+  theta <- boxes_r[, 5]
+  cx <- (xmin + xmax) / 2; cy <- (ymin + ymax) / 2
+  hw <- (xmax - xmin) / 2; hh <- (ymax - ymin) / 2
+  theta_rad <- deg2rad(theta)
+  ct <- cos(theta_rad); st <- -sin(theta_rad)
+  all_x <- cbind(cx - hw * ct + hh * st, cx + hw * ct + hh * st,
+                 cx + hw * ct - hh * st, cx - hw * ct - hh * st)
+  all_y <- cbind(cy - hw * st - hh * ct, cy + hw * st - hh * ct,
+                 cy + hw * st + hh * ct, cy - hw * st + hh * ct)
+
+  # edge midpoints: next corner wraps around (edge 4 -> edge 1)
+  next_edge <- c(2, 3, 4, 1)
+  edge_x <- (all_x[, next_edge] + all_x) / 2
+  edge_y <- (all_y[, next_edge] + all_y) / 2
+
+  # the border of each box must pass through (within 1 px of) the midpoint of
+  # each of its edges; use a 3x3 max so sub-pixel anti-aliasing of the stroked
+  # polygon doesn't make the check fragile
+  mid_y <- round(as.vector(edge_y)) + 1L
+  mid_x <- round(as.vector(edge_x)) + 1L
+  edge_px <- vapply(seq_along(mid_y), function(i) {
+    max(red[max(1, mid_y[i] - 1):min(H, mid_y[i] + 1),
+            max(1, mid_x[i] - 1):min(W, mid_x[i] + 1)])
+  }, numeric(1))
+  expect_true(all(edge_px > 200))
+
+  # no border may be drawn along the straight lines joining one box to the other
+  mid_px <- red[cbind(round(colMeans(all_y)) + 1, round(colMeans(all_x)) + 1)]
+  expect_true(all(mid_px < 100))
 })
 
 test_that("draw_segmentation_masks works with boolean mask", {
 
   image_float <- 1 - (torch::torch_randn(c(3, 360, 360)) / 20)
   image_uint <- torch::torch_randint(low = 190, high = 255, size = c(3, 360, 360))$to(torch::torch_uint8())
-  lower_mask <- torch::torch_tril(torch::torch_ones(c(360, 360)), diagonal = FALSE)$to(torch::torch_bool())
-  upper_mask <- torch::torch_triu(torch::torch_ones(c(360, 360)), diagonal = FALSE)$to(torch::torch_bool())
+  lower_mask <- torch::torch_tril(torch::torch_ones(c(360, 360)), diagonal = FALSE)$to(torch_bool())
+  upper_mask <- torch::torch_triu(torch::torch_ones(c(360, 360)), diagonal = FALSE)$to(torch_bool())
   masks <- torch::torch_stack(c(lower_mask, upper_mask), dim = 1)
 
   expect_no_error(masked_image <- draw_segmentation_masks(image_float, masks))

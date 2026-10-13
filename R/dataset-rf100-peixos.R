@@ -18,7 +18,9 @@ NULL
 #'     - `labels`: integer vector with the class index (always 1 for "fish").
 #'
 #' The returned item is given class `image_with_segmentation_mask` so it can be
-#' visualised with helpers like [draw_segmentation_masks()].
+#' visualised with helpers like [draw_segmentation_masks()], and its `y` is given
+#' class `segmentation_target`, which target transforms dispatch on. The dataset
+#' itself inherits `segmentation_dataset`.
 #'
 #' @examples
 #' \dontrun{
@@ -51,13 +53,15 @@ rf100_peixos_segmentation_dataset <- torch::dataset(
     root = tempdir(),
     download = FALSE,
     transform = NULL,
-    target_transform = NULL
+    target_transform = NULL,
+    item_transform = NULL
   ) {
     self$dataset <- "peixos"
     self$split <- match.arg(split)
     self$root <- fs::path_expand(root)
     self$transform <- transform
     self$target_transform <- target_transform
+    self$item_transform <- item_transform
 
     self$data_dir <- fs::path(self$root, class(self)[[1]])
     self$image_dir <- fs::path(self$data_dir, self$split)
@@ -75,6 +79,8 @@ rf100_peixos_segmentation_dataset <- torch::dataset(
     }
 
     self$load_annotations()
+
+    as_segmentation_dataset(self)
 
     cli_inform("{.cls {class(self)[[1]]}} dataset loaded with {self$.length()} images across {length(self$classes)} classes.")
   },
@@ -132,7 +138,7 @@ rf100_peixos_segmentation_dataset <- torch::dataset(
 
     H <- dim(x)[1]
     W <- dim(x)[2]
-    mask <- torch::torch_zeros(c(H, W), dtype = torch::torch_bool())
+    mask <- torch::torch_zeros(c(H, W), dtype = torch_bool())
 
     mask_lst <- lapply(index_annotation$segmentation, function(seg) {
         if (is.list(seg) && length(seg) > 0) {
@@ -142,7 +148,7 @@ rf100_peixos_segmentation_dataset <- torch::dataset(
         }
       })
 
-    y <- list(masks = torch_stack(mask_lst)$sum(dim = 1, keepdim = TRUE), labels = 1L)
+    y <- as_segmentation_target(list(masks = torch_stack(mask_lst)$sum(dim = 1, keepdim = TRUE), labels = 1L))
 
     if (!is.null(self$transform)) {
       x <- self$transform(x)
@@ -153,6 +159,11 @@ rf100_peixos_segmentation_dataset <- torch::dataset(
 
     item <- list(x = x, y = y)
     class(item) <- c("image_with_segmentation_mask", class(item))
+
+    if (!is.null(self$item_transform)) {
+      item <- self$item_transform(item)
+    }
+
     item
   }
 )

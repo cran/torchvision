@@ -1,37 +1,112 @@
 #' @importFrom magrittr %>%
+#' @importFrom torch torch_uint8
+#' @importFrom rlang %||%
 NULL
+
+.min_max_scale <- function(x) {
+  min <- x$min()$item()
+  max <- x$max()$item()
+  x$clamp_(min = min, max = max)
+  x$add_(-min)$div_(max - min + 1e-5)
+  x
+}
 
 #' A simplified version of torchvision.utils.make_grid
 #'
-#' Arranges a batch B of (image) tensors in a grid, with optional padding between
-#'   images. Expects a 4d mini-batch tensor of shape (B x C x H x W).
+#' Arranges images in a grid, with optional padding between images.
 #'
-#' @param tensor tensor of shape (B x C x H x W) to arrange in grid.
-#' @param scale whether to normalize (min-max-scale) the input tensor.
-#' @param num_rows number of rows making up the grid (default 8).
-#' @param padding amount of padding between batch images (default 2).
-#' @param pad_value pixel value to use for padding.
+#' For `torch_tensor` input, accepts either:
+#' - one or more 3D tensors of shape (C x H x W) passed as separate arguments, or
+#' - one or more 4D batch tensor of shape (B x C x H x W).
 #'
-#' @return  a 3d torch_tensor of shape \eqn{\approx(C , num\_rows \times H , num\_cols \times W)} of all images arranged in a grid.
+#' For `magick-image` input, arranges frames using `magick::image_montage()`.
+#'
+#' Positional grid options retain their original order: `scale`, `num_rows`,
+#' `padding`, `pad_value`. When passing additional images, name the grid options.
+#'
+#' @param tensor A 4D `torch_tensor` of shape (B x C x H x W), a 3D `torch_tensor`
+#'   of shape (C x H x W), or a `magick-image` object.
+#' @param ... Additional 3D `torch_tensor` objects (when first argument is a 3D
+#'   tensor), or additional `magick-image` objects (when first argument is a
+#'   `magick-image`).
+#' @param scale whether to normalize (min-max-scale) the input tensor. Only
+#'   applied for `torch_tensor` input.
+#' @param per_row maximum number of images per row (i.e., number of columns);
+#'   remaining images wrap to the next row. Default 8.
+#' @param num_rows Deprecated. Use `per_row` instead.
+#' @param padding amount of padding between images in pixels (default 2).
+#' @param pad_value pixel value (0–1) to use for padding background.
+#'
+#' @return a 3D `torch_tensor` of shape
+#'   \eqn{\approx(C , n\_rows \times H , per\_row \times W)} and of dtype `torch_float()`.
+#'
 #' @family image display
 #' @export
-vision_make_grid <- function(tensor,
-                             scale = TRUE,
-                             num_rows = 8,
-                             padding = 2,
-                             pad_value = 0) {
-
-  min_max_scale <- function(x) {
-    min <- x$min()$item()
-    max <- x$max()$item()
-    x$clamp_(min = min, max = max)
-    x$add_(-min)$div_(max - min + 1e-5)
-    x
+vision_make_grid <- function(tensor, ..., scale = TRUE, per_row = 8, padding = 2, pad_value = 0, num_rows=NULL) {
+  dots <- list(...)
+  if (length(dots) && (is.logical(dots[[1]]) || is.numeric(dots[[1]]))) {
+    # Match scalar options with the released signature, including named options
+    # that take precedence over positional matching. Pass evaluated values so
+    # expressions in the original call run only once.
+    supplied <- setdiff(names(match.call(expand.dots = FALSE))[-1L], c("tensor", "..."))
+    return(do.call(function(tensor, scale = TRUE, num_rows = 8, padding = 2,
+                            pad_value = 0, per_row = num_rows) {
+      vision_make_grid(tensor, scale = scale, per_row = per_row,
+                       padding = padding, pad_value = pad_value)
+    }, c(list(tensor = tensor), dots, mget(supplied, envir = environment()))))
   }
-  if(scale) tensor <- min_max_scale(tensor)
+  if (length(dots) > 0) {
+    primary_class <- class(tensor)[1]
+    non_matching <- Filter(function(x) !inherits(x, primary_class), dots)
+    if (length(non_matching) > 0)
+      cli_abort(c(
+        "All arguments in {.arg ...} must be {.cls {primary_class}} objects.",
+        "x" = "Got {.cls {class(non_matching[[1]])[1]}}."
+      ))
+  }
+  UseMethod("vision_make_grid")
+}
+
+#' @rdname vision_make_grid
+#' @export
+vision_make_grid.default <- function(tensor, ..., scale = TRUE, per_row = 8, padding = 2, pad_value = 0, num_rows=NULL) {
+  cli_abort("The provided {.var tensor} class {.cls {class(tensor)}} is not supported by {.fn vision_make_grid}")
+}
+
+#' @rdname vision_make_grid
+#' @export
+vision_make_grid.torch_tensor <- function(tensor, ..., scale = TRUE, per_row = 8, padding = 2, pad_value = 0, num_rows=NULL) {
+  if (!is.null(num_rows)) {
+    deprecated("'num_rows' is deprecated, use 'per_row' instead.")
+    per_row <- num_rows
+  }
+  extra_tensors <- list(...)
+
+  if (!tensor$ndim %in% c(3L, 4L))
+    value_error("tensor must be 3D (C x H x W) or 4D (B x C x H x W)")
+
+  if (length(extra_tensors) > 0) {
+    all_ndims <- c(tensor$ndim, vapply(extra_tensors, function(x) x$ndim, integer(1)))
+    if (length(unique(all_ndims)) > 1)
+      value_error("All tensors must have the same number of dimensions (all 3D or all 4D)")
+  }
+
+  to_float_unit <- function(t) {
+    if (t$dtype == torch::torch_uint8()) t$to(dtype = torch::torch_float32())$div(255) else t
+  }
+  float_tensors <- lapply(c(list(tensor), extra_tensors), to_float_unit)
+  all_tensors <- if (scale) lapply(float_tensors, .min_max_scale) else float_tensors
+
+
+  if (tensor$ndim == 3) {
+    tensor <- torch::torch_stack(all_tensors)
+  } else {
+    tensor <- if (length(all_tensors) > 1) torch::torch_cat(all_tensors, dim = 1) else all_tensors[[1]]
+  }
+
 
   nmaps <- tensor$size(1)
-  xmaps <- min(num_rows, nmaps)
+  xmaps <- min(per_row, nmaps)
   ymaps <- ceiling(nmaps / xmaps)
   height <- floor(tensor$size(3) + padding)
   width <- floor(tensor$size(4) + padding)
@@ -47,11 +122,11 @@ vision_make_grid <- function(tensor,
         break
       grid$narrow(
         dim = 2,
-        start =  1 + torch::torch_tensor(y * height + padding, dtype = torch::torch_int64())$sum(dim = 1),
+        start = y * height + padding + 1L,
         length = height - padding
       )$narrow(
         dim = 3,
-        start = 1 + torch::torch_tensor(x * width + padding, dtype = torch::torch_int64())$sum(dim = 1),
+        start = x * width + padding + 1L,
         length = width - padding
       )$copy_(tensor[k + 1, , ,])
       k <- k + 1
@@ -61,28 +136,76 @@ vision_make_grid <- function(tensor,
   grid
 }
 
+#' @rdname vision_make_grid
+#' @export
+`vision_make_grid.magick-image` <- function(tensor, ..., scale = TRUE, per_row = 8, padding = 2, pad_value = 0, num_rows=NULL) {
+  if (!is.null(num_rows)) {
+    deprecated("'num_rows' is deprecated, use 'per_row' instead.")
+    per_row <- num_rows
+  }
+  rlang::check_installed("magick")
+
+  imgs <- tensor
+  extra_imgs <- list(...)
+  if (length(extra_imgs) > 0) {
+    imgs <- do.call(c, c(list(imgs), extra_imgs))
+  }
+
+  # transform_to_tensor already normalises to float32 [0,1]; apply per-frame
+  # scaling here so behaviour matches the 3D-tensor path (per-image, not global).
+  frame_tensors <- lapply(seq_along(imgs), function(i) {
+    t <- transform_to_tensor(imgs[i])
+    if (scale) .min_max_scale(t) else t
+  })
+
+  batch <- torch::torch_stack(frame_tensors)
+  vision_make_grid.torch_tensor(batch, scale = FALSE, per_row = per_row,
+                                padding = padding, pad_value = pad_value)
+}
+
+
+check_bbox_is_xyxy <- function(boxes, lazy = TRUE) {
+  valid <- (boxes[, 1] < boxes[, 3])$logical_and(boxes[, 2] < boxes[, 4])
+
+  if (!lazy && (!valid)$any()$item()) {
+    invalid_indices <- which(as.logical(!valid))
+    first_idx <- invalid_indices[1]
+    first_box <- as.numeric(boxes[first_idx, ])
+    cli_abort(c(
+      "Bounding box {.val {first_idx}} is not in valid xyxy format.",
+      "x" = "xmin ({.val {first_box[1]}}) must be < xmax ({.val {first_box[3]}}), and ymin ({.val {first_box[2]}}) must be < ymax ({.val {first_box[4]}})."
+    ))
+  }
+
+  valid
+}
 
 #' Draws bounding boxes on image.
 #'
 #' Draws bounding boxes on top of one image tensor
 #'
-#' @param x Tensor of shape (C x H x W) and dtype `uint8` or dtype `float`.
-#'              In case of dtype float, values are assumed to be in range \eqn{[0, 1]}.
+#' @param x A torch_tensor of shape (C x H x W) and dtype `uint8` or dtype `float`,
+#'              an `image_with_bounding_box`, or an `image_with_rotated_box` object.
+#'              In case of a tensor with dtype float, values are assumed to be in range \eqn{[0, 1]}.
 #'              C value for channel can only be 1 (grayscale) or 3 (RGB).
 #' @param boxes Tensor of size (N, 4) containing N bounding boxes in
 #'            c(\eqn{x_{min}}, \eqn{y_{min}}, \eqn{x_{max}}, \eqn{y_{max}}).
 #'            format. Note that the boxes coordinates are absolute with respect
 #'            to the image. In other words: \eqn{0  \leq x_{min} < x_{max} < Height } and
 #'            \eqn{0  \leq y_{min} < y_{max} < Width }.
-#' @param labels character vector containing the labels of bounding boxes.
+#' @param labels A character vector or tensor containing one label for all boxes,
+#'    or one label per box in the original `boxes` tensor.
 #' @param colors character vector containing the colors
-#'            of the boxes or single color for all boxes. The color can be represented as
+#'            of the boxes or single color for all boxes. When supplying multiple colors,
+#'            provide one per box in the original `boxes` tensor. The color can be represented as
 #'            strings e.g. "red" or "#FF00FF". By default, viridis colors are generated for boxes.
-#' @param color Deprecated alias for `colors`.
 #' @param fill If `TRUE` fills the bounding box with specified color.
 #' @param width  Width of text shift to the bounding box.
 #' @param font NULL for the current font family, or a character vector of length 2 for Hershey vector fonts.
 #' @param font_size The requested font size in points.
+#' @param lazy if `TRUE`, silently filter out degenerate bounding boxes (xmin >= xmax or ymin >= ymax).
+#'    Corresponding per-box labels and colors are filtered with the boxes.
+#'    If `FALSE`, error on the first non-conforming box.
 #' @param ... Additional arguments passed to methods.
 #'
 #' @return  torch_tensor of size (C, H, W) of dtype uint8: Image Tensor with bounding boxes plotted.
@@ -94,7 +217,7 @@ vision_make_grid <- function(tensor,
 #' x <- torch::torch_randint(low = 1, high = 160, size = c(12,1))
 #' y <- torch::torch_randint(low = 1, high = 260, size = c(12,1))
 #' boxes <- torch::torch_cat(c(x, y, x + 20, y +  10), dim = 2)
-#' bboxed <- draw_bounding_boxes(image_tensor, boxes, colors = "black", fill = TRUE)
+#' bboxed <- draw_bounding_boxes(image_tensor, boxes, colors = "black", labels = "label", fill = TRUE)
 #' tensor_image_browse(bboxed)
 #' }
 #' }
@@ -116,20 +239,12 @@ draw_bounding_boxes.torch_tensor <- function(x,
                                              boxes,
                                              labels = NULL,
                                              colors = NULL,
-                                             color = NULL,
                                              fill = FALSE,
                                              width = 1,
                                              font = c("serif", "plain"),
-                                             font_size = 10, ...) {
+                                             font_size = 10,
+                                             lazy = TRUE, ...) {
   rlang::check_installed("magick")
-
-  if (!is.null(color)) {
-    if (!is.null(colors)) {
-      cli_abort("Use either {.arg colors} or {.arg color}, not both.")
-    }
-    cli_warn("{.arg color} is deprecated; use {.arg colors} instead.")
-    colors <- color
-  }
 
   if (x$ndim == 4 && x$size(1) == 1) x <- x$squeeze(1)
   if (x$ndim != 3) value_error("Pass an individual image as `x`, not a batch")
@@ -141,25 +256,36 @@ draw_bounding_boxes.torch_tensor <- function(x,
     x$permute(c(2, 3, 1))$to(device = "cpu") %>% as.array()
   } else type_error("`x` should be torch_uint8 or torch_float")
 
-  if ((boxes[, 1] >= boxes[, 3])$any() %>% as.logical() ||
-      (boxes[, 2] >= boxes[, 4])$any() %>% as.logical()) {
-    value_error("Boxes must be in c(xmin, ymin, xmax, ymax) format")
-  }
+  valid <- check_bbox_is_xyxy(boxes, lazy = lazy)
   num_boxes <- boxes$shape[1]
-  if (num_boxes == 0) {
-    cli_warn("boxes doesn't contain any box. No box was drawn")
-    return(x)
+  if (!is.null(labels) && inherits(labels, "torch_tensor")) {
+    labels <- as.character(as_array(labels$to(device = "cpu")))
   }
-  if (!is.null(labels) && (num_boxes %% length(labels) != 0)) {
+  if (!is.null(labels) && !length(labels) %in% c(1L, num_boxes)) {
     cli_abort(
-      "Number of labels {.val {length(labels)}} cannot be broadcasted on number of boxes {.val {num_boxes}}"
+      "Number of labels {.val {length(labels)}} must be 1 or match the number of boxes {.val {num_boxes}}"
     )
   }
-  if (is.null(colors)) {
-    colors <- grDevices::hcl.colors(n = num_boxes)
+  if (!is.null(colors) && !length(colors) %in% c(1L, num_boxes)) {
+    value_error("colors vector must contain one color or one color per box ({num_boxes}); got {length(colors)}")
   }
-  if (num_boxes %% length(colors) != 0) {
-    value_error("colors vector cannot be broadcasted on boxes")
+
+  boxes <- boxes[valid, ]
+  if (boxes$shape[1] == 0) {
+    cli_warn(if (lazy)
+      "No valid bounding box to draw after filtering degenerate boxes."
+    else
+      "boxes doesn't contain any box. No box was drawn.")
+    return(x)
+  }
+  valid <- as.logical(valid)
+  if (length(labels) > 1L) {
+    labels <- labels[valid]
+  }
+  if (is.null(colors)) {
+    colors <- grDevices::hcl.colors(n = boxes$shape[1])
+  } else if (length(colors) > 1L) {
+    colors <- colors[valid]
   }
 
   if (!fill) {
@@ -169,7 +295,7 @@ draw_bounding_boxes.torch_tensor <- function(x,
   }
 
   if (is.null(font)) {
-    vfont <- c("serif", "plain")
+    font <- c("serif", "plain")
   } else {
     if (is.null(font_size)) font_size <- 10
   }
@@ -179,23 +305,70 @@ draw_bounding_boxes.torch_tensor <- function(x,
   }
 
   img_bb <- boxes$to(torch::torch_int64()) %>% as.array()
+  is_rotated <- ncol(img_bb) == 5
 
   draw <- png::writePNG(img_to_draw) %>%
     magick::image_read() %>%
     magick::image_draw()
 
-  graphics::rect(img_bb[, 1], img_bb[, 2], img_bb[, 3], img_bb[, 4],
-                 col = fill_col, border = colors, lwd = width)
+  if (is_rotated) {
+    xmin <- img_bb[, 1]
+    ymin <- img_bb[, 2]
+    xmax <- img_bb[, 3]
+    ymax <- img_bb[, 4]
+    theta <- img_bb[, 5]
 
-  if (!is.null(labels)) {
-    graphics::text(
-      img_bb[, 1] + 2 * width + font_size,
-      img_bb[, 2] + 2 * width,
-      labels = labels,
-      col = colors,
-      vfont = font,
-      cex = font_size / 10
+    cx <- (xmin + xmax) / 2
+    cy <- (ymin + ymax) / 2
+    hw <- (xmax - xmin) / 2
+    hh <- (ymax - ymin) / 2
+
+    theta_rad <- theta * pi / 180
+    ct <- cos(theta_rad)
+    st <- -sin(theta_rad)
+
+    all_x <- rbind(
+      cx - hw * ct + hh * st,
+      cx + hw * ct + hh * st,
+      cx + hw * ct - hh * st,
+      cx - hw * ct - hh * st
     )
+    all_y <- rbind(
+      cy - hw * st - hh * ct,
+      cy + hw * st - hh * ct,
+      cy + hw * st + hh * ct,
+      cy - hw * st + hh * ct
+    )
+
+    poly_x <- c(apply(all_x, 2, function(col) c(col, NA)))
+    poly_y <- c(apply(all_y, 2, function(col) c(col, NA)))
+
+    graphics::polygon(poly_x, poly_y,
+                      col = fill_col, border = colors, lwd = width)
+
+    if (!is.null(labels)) {
+      label_x <- all_x[1, ] + 2 * width + font_size
+      label_y <- all_y[1, ] + 2 * width
+      graphics::text(label_x, label_y,
+                     labels = labels,
+                     col = colors,
+                     vfont = font,
+                     cex = font_size / 10)
+    }
+  } else {
+    graphics::rect(img_bb[, 1], img_bb[, 2], img_bb[, 3], img_bb[, 4],
+                   col = fill_col, border = colors, lwd = width)
+
+    if (!is.null(labels)) {
+      graphics::text(
+        img_bb[, 1] + 2 * width + font_size,
+        img_bb[, 2] + 2 * width,
+        labels = labels,
+        col = colors,
+        vfont = font,
+        cex = font_size / 10
+      )
+    }
   }
 
   grDevices::dev.off()
@@ -219,7 +392,12 @@ draw_bounding_boxes.image_with_bounding_box <- function(x, ...) {
   )
 }
 
-
+#' @rdname draw_bounding_boxes
+#' @export
+draw_bounding_boxes.image_with_rotated_box <- function(x, labels = NULL, ...) {
+    draw_bounding_boxes(x$x, boxes = x$y$boxes,
+                        labels = labels %||% x$y$labels, ...)
+}
 
 #' Convert COCO polygon to mask tensor (Robust Version)
 #'
@@ -238,7 +416,7 @@ coco_polygon_to_mask <- function(segmentation, height, width) {
   # Handle empty polygon list early to avoid graphics device issues
   if (length(segmentation) == 0) {
     mask_logical <- matrix(FALSE, nrow = height, ncol = width)
-    mask_tensor <- torch::torch_tensor(mask_logical, dtype = torch::torch_bool())
+    mask_tensor <- torch::torch_tensor(mask_logical, dtype = torch_bool())
     return(mask_tensor)
   }
 
@@ -274,12 +452,11 @@ coco_polygon_to_mask <- function(segmentation, height, width) {
   }
 
   if (nrow(mask_matrix) != height || ncol(mask_matrix) != width) {
-    stop(sprintf("Mask matrix dimensions (%d x %d) don't match expected (%d x %d)",
-                 nrow(mask_matrix), ncol(mask_matrix), height, width))
+    cli_abort("Mask dimensions ({nrow(mask_matrix)} x {ncol(mask_matrix)}) don't match parameter expected dimension ({height} x {width})")
   }
 
   mask_logical <- mask_matrix > 0
-  mask_tensor <- torch::torch_tensor(mask_logical, dtype = torch::torch_bool())
+  mask_tensor <- torch::torch_tensor(mask_logical, dtype = torch_bool())
 
   return(mask_tensor)
 }
@@ -353,18 +530,20 @@ draw_segmentation_masks.torch_tensor <- function(x,
     value_error("`masks` must be of shape (H, W) or (num_masks, H, W)")
   }
   # datasets item include boolean masks, and models inference produce logits floats for masks
-  if (masks$dtype != torch::torch_bool() && masks$dtype != torch::torch_float() ) {
+  if (masks$dtype != torch_bool() && masks$dtype != torch::torch_float() ) {
     type_error("`masks` is expected to be of dtype torch_bool() or torch_float()")
   }
-  if (any(masks$shape[-2:-1] != img_to_draw$shape[-2:-1])) {
+  if (any(masks$shape[-1] != img_to_draw$shape[-1])) {
     value_error("`masks` and `image` must have the same height and width")
   }
   # if mask is a model inference output, we need to convert float mask to boolean mask
   if (masks$dtype == torch::torch_float() ) {
     mask_id <- masks$argmax(dim = 1)
-    masks_seq <- mask_id$aminmax()[[1]]$item():mask_id$aminmax()[[2]]$item()
+    minmax <- mask_id$aminmax()
+    masks_seq <- minmax[[1]]$item():minmax[[2]]$item()
+
     # turn mask_id \code{[LongType{H,W}]} into a boolean mask \code{[BoolType{num_masks,H,W}]}
-    masks <- torch::torch_stack(lapply(masks_seq, function(x) mask_id$eq(x)), dim = 1)
+    masks <- torch::torch_stack(lapply(masks_seq, function(class_id) mask_id$eq(class_id)), dim = 1)
   } else {
     masks_seq <- seq(masks$size(1))
   }
@@ -380,6 +559,7 @@ draw_segmentation_masks.torch_tensor <- function(x,
   if (num_masks %% length(colors) != 0) {
     cli_abort("colors vector of size {.value {length(colors)}} cannot be broadcasted on {.value {num_masks}} masks")
   }
+  colors <- rep_len(colors, num_masks)
 
   color_tt <- colors %>%
     grDevices::col2rgb() %>%
@@ -478,21 +658,28 @@ draw_keypoints <- function(image,
     magick::image_read() %>%
     magick::image_draw()
 
-  for (pose in 1:dim(img_kpts)[[1]]) {
-    graphics::points(img_kpts[pose,,1], img_kpts[pose,,2], pch = ".", col = colors, cex = radius)
+  kpts_xy <- matrix(img_kpts, ncol = 2)
 
-    if (!is.null(connectivity)) {
-      for (conn in connectivity) {
-        start_idx <- conn[1]
-        end_idx <- conn[2]
-        start_x <- img_kpts[pose, start_idx, 1]
-        start_y <- img_kpts[pose, start_idx, 2]
-        end_x <- img_kpts[pose, end_idx, 1]
-        end_y <- img_kpts[pose, end_idx, 2]
-        graphics::lines(c(start_x, end_x), c(start_y, end_y), col = colors[start_idx], lwd = width)
-      }
-    }
+  if (nrow(kpts_xy) > 0) {
+    graphics::points(kpts_xy[, 1], kpts_xy[, 2],
+                     pch = ".", col = rep(colors, each = dim(img_kpts)[1]), cex = radius)
   }
+
+  if (!is.null(connectivity)) {
+    conn_mat <- do.call(rbind, connectivity)
+    starts <- conn_mat[, 1]
+    ends <- conn_mat[, 2]
+    # batching many segments in one call slightly changes the anti-aliasing of
+    # overlapping strokes on the magick device compared to one primitive per
+    # segment; visually equivalent, and much faster for large keypoint batches
+    graphics::segments(
+      c(t(img_kpts[, starts, 1])), c(t(img_kpts[, starts, 2])),
+      c(t(img_kpts[, ends, 1])),  c(t(img_kpts[, ends, 2])),
+      col = rep(colors[starts], each = dim(img_kpts)[1]),
+      lwd = width
+    )
+  }
+
   grDevices::dev.off()
   draw_tt <-
     draw %>% magick::image_data(channels = "rgb") %>% as.integer %>% torch::torch_tensor(dtype = torch::torch_uint8())

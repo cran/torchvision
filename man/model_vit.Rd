@@ -63,23 +63,23 @@ image patches as tokens in a Transformer model.
 
 \item \code{model_vit_b_32()}: ViT-B/32 model (Base, 32×32 patch size)
 
-\item \code{model_vit_l_16()}: ViT-L/16 model (Base, 16×16 patch size)
+\item \code{model_vit_l_16()}: ViT-L/16 model (Large, 16×16 patch size)
 
-\item \code{model_vit_l_32()}: ViT-L/32 model (Base, 32×32 patch size)
+\item \code{model_vit_l_32()}: ViT-L/32 model (Large, 32×32 patch size)
 
-\item \code{model_vit_h_14()}: ViT-H/14 model (Base, 14×14 patch size)
+\item \code{model_vit_h_14()}: ViT-H/14 model (Huge, 14×14 patch size)
 
 }}
 \seealso{
-Other classification_model: 
-\code{\link{model_alexnet}()},
+Other classification_model:
+\code{\link[=model_alexnet]{model_alexnet()}},
 \code{\link{model_convnext}},
 \code{\link{model_efficientnet}},
 \code{\link{model_efficientnet_v2}},
 \code{\link{model_facenet}},
-\code{\link{model_inception_v3}()},
-\code{\link{model_maxvit}()},
-\code{\link{model_mobilenet_v2}()},
+\code{\link[=model_inception_v3]{model_inception_v3()}},
+\code{\link[=model_maxvit]{model_maxvit()}},
+\code{\link[=model_mobilenet_v2]{model_mobilenet_v2()}},
 \code{\link{model_mobilenet_v3}},
 \code{\link{model_resnet}},
 \code{\link{model_vgg}}

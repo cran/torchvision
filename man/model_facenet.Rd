@@ -20,13 +20,15 @@ model_mtcnn(pretrained = TRUE, progress = TRUE, ...)
 model_facenet_inception_resnet_v1(
   pretrained = NULL,
   classify = FALSE,
-  num_classes = 10,
+  num_classes = NULL,
   dropout_prob = 0.6,
   ...
 )
 }
 \arguments{
-\item{pretrained}{(bool): If TRUE, returns a model pre-trained on ImageNet.}
+\item{pretrained}{For the MTCNN networks, logical: if TRUE, loads the facenet-pytorch weights.
+For \code{model_facenet_inception_resnet_v1()}, one of \code{NULL} or \code{FALSE} (random weights),
+\code{"vggface2"} (or \code{TRUE}) or \code{"casia-webface"}. Other values are an error.}
 
 \item{progress}{(bool): If TRUE, displays a progress bar of the download to
 stderr.}
@@ -35,7 +37,9 @@ stderr.}
 
 \item{classify}{Logical, whether to include the classification head. Default is FALSE.}
 
-\item{num_classes}{Integer, number of output classes for classification. Default is 10.}
+\item{num_classes}{Integer, number of output classes for classification. Default is NULL: with
+pretrained weights the pretrained logits layer is kept; without pretrained weights it must be
+given when \code{classify = TRUE}.}
 
 \item{dropout_prob}{Numeric, dropout probability applied before classification. Default is 0.6.}
 }
@@ -174,24 +178,21 @@ output
 
 }
 \seealso{
-Other object_detection_model: 
+Other object_detection_model:
 \code{\link{model_convnext_detection}},
 \code{\link{model_fasterrcnn}},
-\code{\link{model_maskrcnn}}
+\code{\link{model_lw_detr}},
+\code{\link{model_maskrcnn}},
+\code{\link{model_rfdetr}}
 
-Other object_detection_model: 
-\code{\link{model_convnext_detection}},
-\code{\link{model_fasterrcnn}},
-\code{\link{model_maskrcnn}}
-
-Other classification_model: 
-\code{\link{model_alexnet}()},
+Other classification_model:
+\code{\link[=model_alexnet]{model_alexnet()}},
 \code{\link{model_convnext}},
 \code{\link{model_efficientnet}},
 \code{\link{model_efficientnet_v2}},
-\code{\link{model_inception_v3}()},
-\code{\link{model_maxvit}()},
-\code{\link{model_mobilenet_v2}()},
+\code{\link[=model_inception_v3]{model_inception_v3()}},
+\code{\link[=model_maxvit]{model_maxvit()}},
+\code{\link[=model_mobilenet_v2]{model_mobilenet_v2()}},
 \code{\link{model_mobilenet_v3}},
 \code{\link{model_resnet}},
 \code{\link{model_vgg}},

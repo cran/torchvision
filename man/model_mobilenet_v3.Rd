@@ -12,14 +12,16 @@ model_mobilenet_v3_large(
   pretrained = FALSE,
   progress = TRUE,
   num_classes = 1000,
-  width_mult = 1
+  width_mult = 1,
+  norm_layer = NULL
 )
 
 model_mobilenet_v3_small(
   pretrained = FALSE,
   progress = TRUE,
   num_classes = 1000,
-  width_mult = 1
+  width_mult = 1,
+  norm_layer = NULL
 )
 
 model_mobilenet_v3_large_quantized(pretrained = FALSE, progress = TRUE, ...)
@@ -33,6 +35,9 @@ stderr.}
 \item{num_classes}{number of output classes (default: 1000).}
 
 \item{width_mult}{width multiplier for model scaling (default: 1.0).}
+
+\item{norm_layer}{normalization layer constructor taking the number of features.
+Defaults to batch norm with \verb{eps = 1e-3, momentum = 0.01} as in torchvision.}
 
 \item{...}{Other parameters passed to the model implementation.}
 }
@@ -112,28 +117,15 @@ glue::glue("{seq_along(indices)}. {imagenet_classes(indices)} ({round(scores, 2)
 
 }
 \seealso{
-Other classification_model: 
-\code{\link{model_alexnet}()},
+Other classification_model:
+\code{\link[=model_alexnet]{model_alexnet()}},
 \code{\link{model_convnext}},
 \code{\link{model_efficientnet}},
 \code{\link{model_efficientnet_v2}},
 \code{\link{model_facenet}},
-\code{\link{model_inception_v3}()},
-\code{\link{model_maxvit}()},
-\code{\link{model_mobilenet_v2}()},
-\code{\link{model_resnet}},
-\code{\link{model_vgg}},
-\code{\link{model_vit}}
-
-Other classification_model: 
-\code{\link{model_alexnet}()},
-\code{\link{model_convnext}},
-\code{\link{model_efficientnet}},
-\code{\link{model_efficientnet_v2}},
-\code{\link{model_facenet}},
-\code{\link{model_inception_v3}()},
-\code{\link{model_maxvit}()},
-\code{\link{model_mobilenet_v2}()},
+\code{\link[=model_inception_v3]{model_inception_v3()}},
+\code{\link[=model_maxvit]{model_maxvit()}},
+\code{\link[=model_mobilenet_v2]{model_mobilenet_v2()}},
 \code{\link{model_resnet}},
 \code{\link{model_vgg}},
 \code{\link{model_vit}}

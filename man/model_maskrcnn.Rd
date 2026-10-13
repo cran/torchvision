@@ -77,7 +77,8 @@ Returns a list with:
 \item \code{boxes}: Bounding boxes (N, 4)
 \item \code{labels}: Class labels (N)
 \item \code{scores}: Confidence scores (N)
-\item \code{masks}: Segmentation masks (N, 28, 28)
+\item \code{masks}: Mask probabilities pasted into the image, (N, H, W)
+\item \code{mask_probs}: Mask probabilities in the box frame, (N, 28, 28)
 }
 }
 }
@@ -109,7 +110,7 @@ input <- img \%>\%
 batch <- input$unsqueeze(1)
 
 # Mask R-CNN ResNet-50 FPN
-model <- model_maskrcnn_resnet50_fpn(pretrained = TRUE, , detections_per_img = 5)
+model <- model_maskrcnn_resnet50_fpn(pretrained = TRUE, detections_per_img = 5)
 model$eval()
 
 torch::with_no_grad({pred <- model(batch)$detections[[1]]})
@@ -122,9 +123,11 @@ tensor_image_browse(boxed)
 
 }
 \seealso{
-Other object_detection_model: 
+Other object_detection_model:
 \code{\link{model_convnext_detection}},
 \code{\link{model_facenet}},
-\code{\link{model_fasterrcnn}}
+\code{\link{model_fasterrcnn}},
+\code{\link{model_lw_detr}},
+\code{\link{model_rfdetr}}
 }
 \concept{object_detection_model}

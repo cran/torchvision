@@ -66,6 +66,8 @@
 #' @inheritParams model_mobilenet_v2
 #' @param num_classes number of output classes (default: 1000).
 #' @param width_mult width multiplier for model scaling (default: 1.0).
+#' @param norm_layer normalization layer constructor taking the number of features.
+#'   Defaults to batch norm with `eps = 1e-3, momentum = 0.01` as in torchvision.
 #'
 #' @family classification_model
 #' @rdname model_mobilenet_v3
@@ -214,42 +216,41 @@ InvertedResidualConfig <- function(input_c, kernel, expanded_c, out_c, use_se, u
 MobileNetV3 <- nn_module(
   "MobileNetV3",
   initialize = function(inverted_residual_setting, last_channel, num_classes = 1000,
-                        dropout = 0.2, norm_layer = nn_batch_norm2d) {
+                        dropout = 0.2, norm_layer = NULL) {
+    # torchvision: partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
+    if (is.null(norm_layer))
+      norm_layer <- function(num_features) nn_batch_norm2d(num_features, eps = 1e-3, momentum = 0.01)
 
-    layers <- list()
+    n_conf <- length(inverted_residual_setting)
+    layers <- vector("list", n_conf + 2)
 
     firstconv_out <- inverted_residual_setting[[1]]$input_channels
-    layers <- c(layers, list(
-      Conv2dNormActivation(
-        3, firstconv_out, kernel_size = 3, stride = 2,
-        norm_layer = norm_layer, activation_layer = nn_hardswish
-      )
-    ))
+    layers[[1]] <- Conv2dNormActivation(
+      3, firstconv_out, kernel_size = 3, stride = 2,
+      norm_layer = norm_layer, activation_layer = nn_hardswish
+    )
 
-    for (conf in inverted_residual_setting) {
-      layers <- c(layers, list(
-        InvertedResidual(
-          input_channels = conf$input_channels,
-          expanded_channels = conf$expanded_channels,
-          out_channels = conf$out_channels,
-          kernel = conf$kernel,
-          stride = conf$stride,
-          use_se = conf$use_se,
-          use_hs = conf$use_hs,
-          dilation = conf$dilation,
-          norm_layer = norm_layer
-        )
-      ))
+    for (i in seq_len(n_conf)) {
+      conf <- inverted_residual_setting[[i]]
+      layers[[i + 1]] <- InvertedResidual(
+        input_channels = conf$input_channels,
+        expanded_channels = conf$expanded_channels,
+        out_channels = conf$out_channels,
+        kernel = conf$kernel,
+        stride = conf$stride,
+        use_se = conf$use_se,
+        use_hs = conf$use_hs,
+        dilation = conf$dilation,
+        norm_layer = norm_layer
+      )
     }
 
-    lastconv_in <- inverted_residual_setting[[length(inverted_residual_setting)]]$out_channels
+    lastconv_in <- inverted_residual_setting[[n_conf]]$out_channels
     lastconv_out <- 6 * lastconv_in
-    layers <- c(layers, list(
-      Conv2dNormActivation(
-        lastconv_in, lastconv_out, kernel_size = 1,
-        norm_layer = norm_layer, activation_layer = nn_hardswish
-      )
-    ))
+    layers[[n_conf + 2]] <- Conv2dNormActivation(
+      lastconv_in, lastconv_out, kernel_size = 1,
+      norm_layer = norm_layer, activation_layer = nn_hardswish
+    )
 
     self$features <- nn_sequential(!!!layers)
     self$avgpool <- nn_adaptive_avg_pool2d(1)
@@ -324,23 +325,24 @@ model_mobilenet_v3_large <- function(
   pretrained = FALSE,
   progress = TRUE,
   num_classes = 1000,
-  width_mult = 1.0
+  width_mult = 1.0,
+  norm_layer = NULL
 ) {
 
   config <- mobilenet_v3_large_config(width_mult)
   last_channel <- make_divisible(1280 * width_mult)
-  model <- MobileNetV3(config, last_channel, num_classes = num_classes)
+  model <- MobileNetV3(config, last_channel, num_classes = num_classes, norm_layer = norm_layer)
   if (pretrained) {
     r <- c("https://torch-cdn.mlverse.org/models/vision/v2/models/mobilenet_v3_large.pth",
            "71625955bc3be9516032a6d5bab49199", "~21 MB")
-    state_dict_path <- download_and_cache(r[1], prefix = "mobilenet")
+    state_dict_path <- download_and_cache(r[1], prefix = "mobilenet", progress = progress)
     if (!tools::md5sum(state_dict_path) == r[2])
       runtime_error("Corrupt file! Delete the file in {state_dict_path} and try again.")
     state_dict <- load_state_dict(state_dict_path)
     renamed_state_dict <- .rename_mobilenet_v3_state_dict(state_dict)
     model$load_state_dict(renamed_state_dict)
+    model$eval()
   }
-  model$eval()
   model
 }
 
@@ -350,19 +352,20 @@ model_mobilenet_v3_small <- function(
   pretrained = FALSE,
   progress = TRUE,
   num_classes = 1000,
-  width_mult = 1.0
+  width_mult = 1.0,
+  norm_layer = NULL
 ) {
 
   config <- mobilenet_v3_small_config(width_mult)
   last_channel <- make_divisible(1024 * width_mult)
-  model <- MobileNetV3(config, last_channel, num_classes = num_classes)
+  model <- MobileNetV3(config, last_channel, num_classes = num_classes, norm_layer = norm_layer)
   if (pretrained) {
-    state_dict_path <- download_and_cache("https://torch-cdn.mlverse.org/models/vision/v2/models/mobilenet_v3_small.pth", prefix = "mobilenet")
+    state_dict_path <- download_and_cache("https://torch-cdn.mlverse.org/models/vision/v2/models/mobilenet_v3_small.pth", prefix = "mobilenet", progress = progress)
     state_dict <- load_state_dict(state_dict_path)
     renamed_state_dict <- .rename_mobilenet_v3_state_dict(state_dict)
     model$load_state_dict(renamed_state_dict)
+    model$eval()
   }
-  model$eval()
   model
 }
 

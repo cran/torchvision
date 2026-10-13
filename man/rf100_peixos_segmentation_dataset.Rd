@@ -9,7 +9,8 @@ rf100_peixos_segmentation_dataset(
   root = tempdir(),
   download = FALSE,
   transform = NULL,
-  target_transform = NULL
+  target_transform = NULL,
+  item_transform = NULL
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ rf100_peixos_segmentation_dataset(
 \item{transform}{Optional transform function applied to the image.}
 
 \item{target_transform}{Optional transform function applied to the target.}
+
+\item{item_transform}{Optional transform function applied to the whole item, such as
+\code{\link[=item_transform_rotate]{item_transform_rotate()}}, once \code{transform} and \code{target_transform} have been applied.
+It is only used by \code{.getitem()}, not by the batched \code{.getbatch()}.}
 }
 \value{
 A torch dataset. Each element is a named list with:
@@ -36,7 +41,9 @@ C × H × W tensor).
 }
 
 The returned item is given class \code{image_with_segmentation_mask} so it can be
-visualised with helpers like \code{\link[=draw_segmentation_masks]{draw_segmentation_masks()}}.
+visualised with helpers like \code{\link[=draw_segmentation_masks]{draw_segmentation_masks()}}, and its \code{y} is given
+class \code{segmentation_target}, which target transforms dispatch on. The dataset
+itself inherits \code{segmentation_dataset}.
 }
 \description{
 Loads the Roboflow 100 "peixos" dataset for semantic segmentation.
@@ -58,9 +65,10 @@ tensor_image_browse(overlay)
 
 }
 \seealso{
-Other segmentation_dataset: 
-\code{\link{coco_segmentation_dataset}()},
-\code{\link{oxfordiiitpet_segmentation_dataset}()},
+Other segmentation_dataset:
+\code{\link[=cityscapes_dataset]{cityscapes_dataset()}},
+\code{\link[=coco_segmentation_dataset]{coco_segmentation_dataset()}},
+\code{\link[=oxfordiiitpet_segmentation_dataset]{oxfordiiitpet_segmentation_dataset()}},
 \code{\link{pascal_voc_datasets}}
 }
 \concept{segmentation_dataset}

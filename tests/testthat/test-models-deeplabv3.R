@@ -11,7 +11,7 @@ test_that("deeplabv3_resnet50 works with default aux_loss=NULL", {
     model <- model_deeplabv3_resnet50(pretrained = TRUE)
   })
   out <- model(input)
-  expect_named(out, "out")
+  expect_named(out, c("out", "aux"))
   expect_tensor_shape(out$out, c(1, 21, 32, 32))
 })
 
@@ -31,7 +31,7 @@ test_that("deeplabv3_resnet101 works with default aux_loss=NULL", {
     model <- model_deeplabv3_resnet101(pretrained = TRUE)
   })
   out <- model(input)
-  expect_named(out, "out")
+  expect_named(out, c("out", "aux"))
   expect_tensor_shape(out$out, c(1, 21, 32, 32))
 })
 
@@ -71,10 +71,10 @@ test_that("pretrained requires num_classes to be \'21\'", {
   )
 })
 
-test_that("model_deeplabv3_resnet50 detects cat in Wikipedia image", {
+test_that("model_deeplabv3_resnet50 detects aeroplane in Wikipedia image", {
 
-  img_url <- "https://upload.wikimedia.org/wikipedia/commons/3/36/United_Airlines_Boeing_777-200_Meulemans.jpg"
-  img <- magick::image_read(img_url)
+  # attribution to https://upload.wikimedia.org/wikipedia/commons/f/fa/America%E2%80%99s_Airfield_serves_as_hub_for_the_2024_NATO_Summit_%288526396%29.jpg
+  img <- magick::image_read("assets/class/aircraft/2024_nato_summit.jpeg")
 
   norm_mean <- c(0.485, 0.456, 0.406)
   norm_std <- c(0.229, 0.224, 0.225)
@@ -88,10 +88,10 @@ test_that("model_deeplabv3_resnet50 detects cat in Wikipedia image", {
   model$eval()
 
   output <- model(input)
-  mask <- output$out$argmax(dim = 2)  # shape (1, H, W)
+  mask <- output$out$argmax(dim = 2)  # shape (1, H, W), 1-based class ids
 
   label_array <- mask %>% torch::as_array()  # convert to R array
-  label_table <- table(factor(label_array, levels = 0:20, labels = pascal_voc_classes()))
+  label_table <- table(factor(label_array, levels = 1:21, labels = pascal_voc_classes()))
 
   expect_gt(label_table[["aeroplane"]], 0)
   expect_gt(label_table[["aeroplane"]], label_table[["dog"]])

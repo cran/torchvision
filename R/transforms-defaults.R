@@ -19,50 +19,31 @@ transform_resize.default <- function(img, size, interpolation) {
   not_implemented_for_class(img)
 }
 
+get_center_crop_params <- function(img, size) {
+  output_size <- as.integer(if (length(size) == 1) rep(size, 2) else size)
+  c(image_width, image_height) %<-% get_image_size(img)
+  c(crop_height, crop_width) %<-% output_size
+
+  pad_width <- max(crop_width - image_width, 0L)
+  pad_height <- max(crop_height - image_height, 0L)
+  padding <- c(pad_width %/% 2L, (pad_width + 1L) %/% 2L,
+               pad_height %/% 2L, (pad_height + 1L) %/% 2L)
+
+  # Keep the crop origins relative to the padded image, using one-based indices.
+  top <- max((image_height + pad_height - crop_height) %/% 2L, 1L)
+  left <- max((image_width + pad_width - crop_width) %/% 2L, 1L)
+
+  list(padding = padding, top = top, left = left,
+       height = crop_height, width = crop_width)
+}
+
 #' @export
 transform_center_crop.default <- function(img, size) {
-
-  output_size <- size
-
-  if (length(size) == 1)
-    output_size <- rep(size, 2)
-
-  output_size <- as.integer(output_size)
-
-  size <- get_image_size(img)
-
-  image_height <- size[2]
-  image_width <- size[1]
-
-  crop_height <- output_size[1]
-  crop_width <- output_size[2]
-
-  if (crop_width > image_width || crop_height > image_height) {
-
-    padding_ltrb <- c(
-      if (crop_width > image_width) (crop_width - image_width) %/% 2  else 0,
-      if (crop_width > image_width) (crop_width - image_width + 1) %/% 2  else 0,
-      if (crop_height > image_height) (crop_height - image_height) %/% 2  else 0,
-      if (crop_height > image_height) (crop_height - image_height + 1) %/% 2  else 0
-    )
-
-    img <- transform_pad(img, padding_ltrb, fill = 0)  # PIL uses fill value 0
-
-    size <- get_image_size(img)
-    image_height <- size[1]
-    image_width <- size[2]
-
-    if (crop_width == image_width && crop_height == image_height) return(img)
+  params <- get_center_crop_params(img, size)
+  if (any(params$padding > 0L)) {
+    img <- transform_pad(img, params$padding, fill = 0)
   }
-
-  crop_top <- as.integer((image_height - crop_height) / 2)
-  crop_left <- as.integer((image_width - crop_width) / 2)
-
-  # if either of these is 0, we will lose a pixel in transform_crop
-  if (crop_top == 0) crop_top <- 1
-  if (crop_left == 0) crop_left <- 1
-
-  transform_crop(img, crop_top, crop_left, crop_height, crop_width)
+  transform_crop(img, params$top, params$left, params$height, params$width)
 }
 
 #' @export
@@ -101,15 +82,14 @@ transform_random_order.default <- function(img, transforms) {
 
 get_random_crop_params <- function(img, output_size) {
 
-  img_size <- get_image_size(img)
-  w <- img_size[1]; h <- img_size[2]
-  th <- output_size[1]; tw <- output_size[2]
+  c(w, h) %<-% get_image_size(img)
+  c(th, tw) %<-% output_size
 
   if (w == tw && h == th)
-    return(c(0, 0, h, w))
+    return(c(1, 1, h, w))
 
-  i <- as.integer(torch::torch_randint(1, h - th + 1, size=1))
-  j <- as.integer(torch::torch_randint(1, w - tw + 1, size=1))
+  i <- sample.int(h - th + 1, 1)
+  j <- sample.int(w - tw + 1, 1)
 
   c(i, j, th, tw)
 }
@@ -176,10 +156,10 @@ get_random_resized_crop_params <- function(img, scale, ratio) {
   area <- height * width
 
   for (i in 1:10) {
-    target_area <- as.numeric(area * torch::torch_empty(1)$uniform_(scale[1], scale[2]))
+    target_area <- as.numeric(area * torch_empty(1)$uniform_(scale[1], scale[2]))
     log_ratio <- torch::torch_log(torch::torch_tensor(ratio))
     aspect_ratio <-  as.numeric(torch::torch_exp(
-      torch::torch_empty(1)$uniform_(as.numeric(log_ratio[1]), as.numeric(log_ratio[2]))
+      torch_empty(1)$uniform_(as.numeric(log_ratio[1]), as.numeric(log_ratio[2]))
     ))
 
     w <- as.integer(round(sqrt(target_area * aspect_ratio)))
@@ -207,8 +187,8 @@ get_random_resized_crop_params <- function(img, scale, ratio) {
     w <- width
     h <- height
   }
-  i <- (height - h) %/% 2
-  j <- (width - w) %/% 2
+  i <- (height - h) %/% 2 + 1
+  j <- (width - w) %/% 2 + 1
 
   c(i, j, h, w)
 }
@@ -233,6 +213,11 @@ transform_five_crop.default <- function(img, size) {
 #' @export
 transform_ten_crop.default <- function(img, size, vertical_flip = FALSE) {
   not_implemented_for_class(img)
+}
+
+#' @export
+transform_sahi_crop.default <- function(x, sahi_split) {
+  not_implemented_for_class(x)
 }
 
 #' @export
@@ -333,17 +318,10 @@ transform_color_jitter.default <- function(img, brightness=0, contrast=0,
 }
 
 get_random_rotation_params <- function(degrees) {
-  as.numeric(torch::torch_empty(1)$uniform_(degrees[1], degrees[2]))
+  as.numeric(torch_empty(1)$uniform_(degrees[1], degrees[2]))
 }
 
-#' @export
-transform_random_rotation.default <- function(img, degrees, interpolation=0,
-                                              expand=FALSE, center=NULL, fill=NULL, resample) {
-  if (!missing(resample)) {
-    deprecated("'resample' is deprecated, use 'interpolation' instead")
-    interpolation <- resample
-  }
-
+check_random_rotation_params <- function(degrees) {
   if (length(degrees) == 1) {
 
     if (degrees < 0)
@@ -355,60 +333,25 @@ transform_random_rotation.default <- function(img, degrees, interpolation=0,
     value_error("degrees must be length 1 or 2")
   }
 
+  degrees
+}
+
+#' @export
+transform_random_rotation.default <- function(img, degrees, interpolation=0,
+                                              expand=FALSE, center=NULL, fill=NULL, resample) {
+  if (!missing(resample)) {
+    deprecated("'resample' is deprecated, use 'interpolation' instead")
+    interpolation <- resample
+  }
+
+  degrees <- check_random_rotation_params(degrees)
+
   angle <- get_random_rotation_params(degrees)
   transform_rotate(img, angle, interpolation, expand, center, fill)
 }
 
 
-get_random_affine_params <- function(degrees,
-                                     translate,
-                                     scale_ranges,
-                                     shears,
-                                     img_size) {
-
-  angle <- as.numeric(torch::torch_empty(1)$uniform_(degrees[1], degrees[2]))
-  if (!is.null(translate)) {
-    max_dx <- as.numeric(translate[1] * img_size[1])
-    max_dy <- as.numeric(translate[2] * img_size[2])
-    tx <- as.integer(round(as.numeric(torch::torch_empty(1)$uniform_(-max_dx, max_dx))))
-    ty <- as.integer(round(as.numeric(torch::torch_empty(1)$uniform_(-max_dy, max_dy))))
-    translations <- c(tx, ty)
-  } else {
-    translations <- c(0,0)
-  }
-
-  if (!is.null(scale_ranges)) {
-    scale <- as.numeric(torch::torch_empty(1)$uniform_(scale_ranges[1], scale_ranges[2]))
-  } else {
-    scale <- 1
-  }
-
-  shear_x <- shear_y <- 0.0
-
-  if (!is.null(shears))  {
-    shear_x <- as.numeric(torch::torch_empty(1)$uniform_(shears[1], shears[2]))
-    if (length(shears) == 4)
-      shear_y <- as.numeric(torch::torch_empty(1)$uniform_(shears[3], shears[4]))
-  }
-
-  shear <- c(shear_x, shear_y)
-
-  list(angle, translations, scale, shear)
-}
-
-#' @export
-transform_random_affine.default <- function(img, degrees, translate=NULL, scale=NULL,
-                                            shear=NULL, interpolation=0, fill=0,
-                                            resample, fillcolor) {
-  if (!missing(resample)) {
-    deprecated("'resample' is deprecated, use 'interpolation' instead")
-    interpolation <- resample
-  }
-  if (!missing(fillcolor)) {
-    deprecated("'fillcolor' is deprecated, use 'fill' instead")
-    fill <- fillcolor
-  }
-
+check_random_affine_params <- function(degrees, translate, scale, shear) {
   if (length(degrees) == 1) {
 
     if (degrees < 0)
@@ -448,7 +391,7 @@ transform_random_affine.default <- function(img, degrees, translate=NULL, scale=
       if (shear < 0)
         value_error("shear must be positive if it's a single value")
 
-      degrees <- c(-degrees, degrees)
+      shear <- c(-shear, shear)
 
     } else if (!length(shear) %in% c(2, 4)) {
       value_error("shear's length must be 1, 2, or 4")
@@ -456,10 +399,63 @@ transform_random_affine.default <- function(img, degrees, translate=NULL, scale=
 
   }
 
+  list(degrees = degrees, shear = shear)
+}
+
+get_random_affine_params <- function(degrees,
+                                     translate,
+                                     scale_ranges,
+                                     shears,
+                                     img_size) {
+
+  angle <- as.numeric(torch_empty(1)$uniform_(degrees[1], degrees[2]))
+  if (!is.null(translate)) {
+    max_dx <- as.numeric(translate[1] * img_size[1])
+    max_dy <- as.numeric(translate[2] * img_size[2])
+    tx <- as.integer(round(as.numeric(torch_empty(1)$uniform_(-max_dx, max_dx))))
+    ty <- as.integer(round(as.numeric(torch_empty(1)$uniform_(-max_dy, max_dy))))
+    translations <- c(tx, ty)
+  } else {
+    translations <- c(0,0)
+  }
+
+  if (!is.null(scale_ranges)) {
+    scale <- as.numeric(torch_empty(1)$uniform_(scale_ranges[1], scale_ranges[2]))
+  } else {
+    scale <- 1
+  }
+
+  shear_x <- shear_y <- 0.0
+
+  if (!is.null(shears))  {
+    shear_x <- as.numeric(torch_empty(1)$uniform_(shears[1], shears[2]))
+    if (length(shears) == 4)
+      shear_y <- as.numeric(torch_empty(1)$uniform_(shears[3], shears[4]))
+  }
+
+  shear <- c(shear_x, shear_y)
+
+  list(angle, translations, scale, shear)
+}
+
+#' @export
+transform_random_affine.default <- function(img, degrees, translate=NULL, scale=NULL,
+                                            shear=NULL, interpolation=0, fill=0,
+                                            resample, fillcolor) {
+  if (!missing(resample)) {
+    deprecated("'resample' is deprecated, use 'interpolation' instead")
+    interpolation <- resample
+  }
+  if (!missing(fillcolor)) {
+    deprecated("'fillcolor' is deprecated, use 'fill' instead")
+    fill <- fillcolor
+  }
+
+  args <- check_random_affine_params(degrees, translate, scale, shear)
 
   img_size <- get_image_size(img)
 
-  ret <- get_random_affine_params(degrees, translate, scale, shear, img_size)
+  ret <- get_random_affine_params(args$degrees, translate, scale, args$shear, img_size)
 
   transform_affine(img, ret[[1]], ret[[2]], ret[[3]], ret[[4]],
                    interpolation=interpolation, fill=fill)

@@ -244,8 +244,8 @@ transform_five_crop.torch_tensor <- function(img, size) {
   if (!length(size) == 2)
     value_error("Please provide only 2 dimensions (h, w) for size.")
 
-  image_width <- img$size(-2)
-  image_height <- img$size(-1)
+  image_height <- img$size(-2)
+  image_width <- img$size(-1)
 
   crop_height <- size[1]
   crop_width <- size[2]
@@ -253,10 +253,10 @@ transform_five_crop.torch_tensor <- function(img, size) {
   if (crop_width > image_width || crop_height > image_height)
     value_error("Requested crop size is bigger than input size.")
 
-  tl <- transform_crop(img, 1, 1, crop_width, crop_height)
-  tr <- transform_crop(img, image_width - crop_width + 1, 1, image_width, crop_height)
-  bl <- transform_crop(img, 1, image_height - crop_height + 1, crop_width, image_height)
-  br <- transform_crop(img, image_width - crop_width + 1, image_height - crop_height + 1, image_width, image_height)
+  tl <- transform_crop(img, 1, 1, crop_height, crop_width)
+  tr <- transform_crop(img, 1, image_width - crop_width + 1, crop_height, crop_width)
+  bl <- transform_crop(img, image_height - crop_height + 1, 1, crop_height, crop_width)
+  br <- transform_crop(img, image_height - crop_height + 1, image_width - crop_width + 1, crop_height, crop_width)
   center <- transform_center_crop(img, c(crop_height, crop_width))
 
   list(tl, tr, bl, br, center)
@@ -280,6 +280,23 @@ transform_ten_crop.torch_tensor <- function(img, size, vertical_flip = FALSE) {
   second_five <- transform_five_crop(img, size)
 
   c(first_five, second_five)
+}
+#' @export
+transform_sahi_crop.torch_tensor <- function(x, sahi_split) {
+
+  if (!inherits(sahi_split, "sahi_split")) {
+    cli_abort("{.arg sahi_split} must be a {.cls sahi_split} object created by {.fn prepare_sahi_split}.")
+  }
+  check_img(x)
+
+  crops <- lapply(sahi_split$crop_windows, function(cw) {
+    transform_crop(x, cw$top, cw$left, cw$height, cw$width)
+  })
+
+  result <- torch_stack(crops)
+  if (x$ndim == 4)
+    result <- result$flatten(start_dim = 1, end_dim = 2)
+  result
 }
 
 #' @export
@@ -317,7 +334,31 @@ transform_grayscale.torch_tensor <- function(img, num_output_channels) {
 transform_crop.torch_tensor <- function(img, top, left, height, width) {
   check_img(img)
 
-  img[.., top:(top + height - 1), left:(left + width - 1)]
+  size <- get_image_size(img)
+  image_width <- size[1]
+  image_height <- size[2]
+
+  bottom <- top + height - 1
+  right <- left + width - 1
+
+  # A crop that leaves the image is padded with zeros, so that the output always has the requested
+  # size, as in torchvision for python.
+  pad_top <- max(1 - top, 0)
+  pad_left <- max(1 - left, 0)
+  pad_bottom <- max(bottom - image_height, 0)
+  pad_right <- max(right - image_width, 0)
+
+  if (pad_top == 0 && pad_left == 0 && pad_bottom == 0 && pad_right == 0)
+    return(img[.., top:bottom, left:right])
+
+  # the crop can also lie entirely outside the image, in which case there is nothing to index
+  if (bottom < 1 || right < 1 || top > image_height || left > image_width) {
+    out_size <- c(utils::head(img$size(), -2), height, width)
+    return(torch::torch_zeros(out_size, dtype = img$dtype, device = img$device))
+  }
+
+  cropped <- img[.., max(top, 1):min(bottom, image_height), max(left, 1):min(right, image_width)]
+  transform_pad(cropped, c(pad_left, pad_right, pad_top, pad_bottom), fill = 0)
 }
 
 #' @export
@@ -363,6 +404,14 @@ transform_adjust_hue.torch_tensor <- function(img, hue_factor) {
 
   check_img(img)
 
+  channels <- tail(head(img$size(), -2), 1)
+  if (!channels %in% c(1, 3))
+    value_error("Input image tensor permitted channel values are 1 or 3, but found {channels}.")
+
+  # a single-channel image has no hue to adjust, as in torchvision for python
+  if (channels == 1)
+    return(img)
+
   orig_dtype <- img$dtype
   if (img$dtype == torch::torch_uint8())
     img <- img$to(dtype = torch::torch_float32())/255
@@ -372,7 +421,9 @@ transform_adjust_hue.torch_tensor <- function(img, hue_factor) {
   channel_dim <- if (img$ndim == 3) 1 else 2
   hsv <- img$unbind(channel_dim)
   hsv[[1]] <- hsv[[1]] + hue_factor
-  hsv[[1]] <- hsv[[1]] %% 1
+  # `%%` is `fmod()` for tensors and keeps the sign of the dividend, so a negative `hue_factor`
+  # would give a negative hue; the hue wraps around instead
+  hsv[[1]] <- torch::torch_remainder(hsv[[1]], 1)
   img <- torch::torch_stack(hsv, dim=channel_dim)
   img_hue_adj <- hsv2rgb(img)
 
@@ -456,13 +507,17 @@ transform_affine.torch_tensor <- function(img, angle, translate, scale, shear,
 #' @export
 transform_perspective.torch_tensor <- function(img, startpoints, endpoints, interpolation = 2,
                                                fill = NULL) {
-  not_implemented_error("`transform_perspective` is not implemented yet.")
+  coeffs <- get_perspective_coeffs(startpoints, endpoints)
+  perspective_impl(img, coeffs, interpolation = interpolation, fill = fill)
 }
 
 #' @export
 transform_rgb_to_grayscale.torch_tensor <- function(img) {
   check_img(img)
-  (0.2989 * img[..,1,,] + 0.5870 * img[..,2,,] + 0.1140 * img[..,3,,])$to(img$dtype)
+  gray <- (0.2989 * img[..,1,,] + 0.5870 * img[..,2,,] + 0.1140 * img[..,3,,])$to(img$dtype)
+  # indexing the channels drops their dimension, but the result is a single-channel image and must
+  # keep the same number of dimensions as the input, as in torchvision for python
+  gray$unsqueeze(-3)
 }
 
 # Helpers -----------------------------------------------------------------
@@ -477,6 +532,7 @@ check_img <- function(x) {
 }
 
 #' @importFrom utils tail
+#' @export
 get_image_size.torch_tensor <- function(img) {
   check_img(img)
 
@@ -539,12 +595,13 @@ hsv2rgb <- function(img) {
 
   hsv <- img$unbind(channel_dim)
   i <- torch::torch_floor(hsv[[1]] * 6)
-  f <- (hsv[[1]] * 6) - 1
+  # `f` is the fractional part of the sector, i.e. the distance to the sector `i` starts at
+  f <- (hsv[[1]] * 6) - i
   i <- i$to(dtype = torch::torch_int32())
 
   p <- torch::torch_clamp((hsv[[3]] * (1 - hsv[[2]])), 0, 1)
   q <- torch::torch_clamp((hsv[[3]] * (1 - hsv[[2]] * f)), 0, 1)
-  t <- torch::torch_clamp((hsv[[3]] * (1 - f)), 0, 1)
+  t <- torch::torch_clamp((hsv[[3]] * (1 - hsv[[2]] * (1 - f))), 0, 1)
   i <- i %% 6
 
   mask <- if (img$ndim == 3)
@@ -659,7 +716,7 @@ apply_grid_transform <- function(img, grid, mode) {
 gen_affine_grid <- function(theta, w, h, ow, oh) {
 
   d <- 0.5
-  base_grid <- torch::torch_empty(1, oh, ow, 3)
+  base_grid <- torch_empty(1, oh, ow, 3)
   base_grid[.., 1]$copy_(torch::torch_linspace(start = -ow * 0.5 + d, end = ow * 0.5 + d - 1,
                                                steps=ow))
 
@@ -691,9 +748,7 @@ rotate_compute_output_size <- function(theta, w, h) {
 
   # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
   tol <- 1e-4
-  cmax <- torch::torch_ceil((max_vals / tol)$trunc_() * tol)
-  cmin <- torch::torch_floor((min_vals / tol)$trunc_() * tol)
-  size <- cmax - cmin
+  size <- torch::torch_ceil(max_vals - min_vals - tol)
 
   as.integer(c(size[1]$item(), size[2]$item()))
 }
@@ -710,8 +765,9 @@ rotate_impl <- function(img, matrix, interpolation = 0, expand = FALSE, fill = N
 
   assert_grid_transform_inputs(img, matrix, interpolation, fill, interpolation_modes)
   theta <- torch::torch_tensor(matrix)$reshape(c(1, 2, 3))
-  w <- tail(img$shape, 2)[1]
-  h <- tail(img$shape, 2)[2]
+  # w/h follow Pillow convention (w = first spatial dim = H in torch)
+  h <- tail(img$shape, 2)[1]  # This is H in (C, H, W)
+  w <- tail(img$shape, 2)[2]  # This is W in (C, H, W)
 
   if (expand) {
     o_shape <- rotate_compute_output_size(theta, w, h)
@@ -819,24 +875,119 @@ transform_adjust_gamma.torch_tensor <- function(img, gamma, gain = 1) {
 }
 
 get_perspective_coeffs <- function(startpoints, endpoints) {
+  # Convert  lists tp matrix 4x2
+  p1 <- if (is.matrix(endpoints)) endpoints else do.call(rbind, endpoints)
+  p2 <- if (is.matrix(startpoints)) startpoints else do.call(rbind, startpoints)
 
-  a_matrix <- torch::torch_zeros(2 * length(startpoints), 8,
-                                 dtype = torch::torch_float())
+  p1_x <- p1[, 1]; p1_y <- p1[, 2]
+  p2_x <- p2[, 1]; p2_y <- p2[, 2]
 
-  for (i in seq_along(startpoints)) {
+  # build the 8x8 matrix
+  A <- matrix(0, nrow = 8, ncol = 8)
+  odd <- c(1, 3, 5, 7)
+  even <- c(2, 4, 6, 8)
 
-    p1 <- endpoints[[i]]
-    p2 <- startpoints[[i]]
+  A[odd, 1:3]  <- cbind(p1_x, p1_y, 1)
+  A[odd, 7:8]  <- cbind(-p2_x * p1_x, -p2_x * p1_y)
+  A[even, 4:6] <- cbind(p1_x, p1_y, 1)
+  A[even, 7:8] <- cbind(-p2_y * p1_x, -p2_y * p1_y)
 
-    a_matrix[1 + 2*(i-1), ] <- torch::torch_tensor(c(p1[1], p1[2], 2, 1, 1, 1, -p2[1] * p1[1], -p2[1] * p1[2]))
-    a_matrix[2*i,] <- torch::torch_tensor(c(1, 1, 1, p1[1], p1[2], 2, -p2[2] * p1[1], -p2[2] * p1[1]))
+  b <- as.vector(t(p2))
 
-  }
+  # solve linear equation 8x8
+  A_t <- torch::torch_tensor(A, dtype = torch::torch_float64())
+  b_t <- torch::torch_tensor(b, dtype = torch::torch_float64())
 
-  b_matrix <- torch::torch_tensor(unlist(startpoints), dtype = torch::torch_float())$view(8)
-  res <- torch::linalg_lstsq(b_matrix, a_matrix)[[1]]
-
-  output <- torch::as_array(res$squeeze(1))
-  output
+  sol <- torch::linalg_solve(A_t, b_t)
+  torch::as_array(sol)
 }
+
+perspective_grid <- function(coeffs, ow, oh, dtype, device) {
+  theta1 <- torch::torch_tensor(
+    matrix(coeffs[1:6], nrow = 2, byrow = TRUE),
+    dtype = dtype, device = device
+  )$unsqueeze(1)
+
+  theta2 <- torch::torch_tensor(
+    matrix(c(coeffs[7:8], 1, coeffs[7:8], 1), nrow = 2, byrow = TRUE),
+    dtype = dtype, device = device
+  )$unsqueeze(1)
+
+  # vectorised grid via meshgrid
+  y <- torch::torch_linspace(0.5, oh - 0.5, steps = oh, dtype = dtype, device = device)
+  x <- torch::torch_linspace(0.5, ow - 0.5, steps = ow, dtype = dtype, device = device)
+  grid <- torch::torch_meshgrid(list(y, x), indexing = "ij")
+
+  ones <- torch::torch_ones(c(oh, ow), dtype = dtype, device = device)
+  base_grid <- torch::torch_stack(list(grid[[2]], grid[[1]], ones), dim = -1)$view(c(1, oh * ow, 3))
+
+  rescaled_theta1 <- theta1$transpose(2, 3)$div(
+    torch::torch_tensor(c(0.5 * ow, 0.5 * oh), dtype = dtype, device = device)
+  )
+
+  output_grid1 <- base_grid$bmm(rescaled_theta1)
+  output_grid2 <- base_grid$bmm(theta2$transpose(2, 3))
+
+  output_grid <- output_grid1$div_(output_grid2)$sub_(1)
+  output_grid$view(c(1, oh, ow, 2))
+}
+
+perspective_impl <- function(img, coeffs, interpolation = 2, fill = NULL) {
+  interpolation_modes <- c(
+    "0" = "nearest",
+    "2" = "bilinear",
+    "nearest" = "nearest",
+    "nearest-exact" = "nearest",
+    "bilinear" = "bilinear"
+  )
+
+  check_img(img)
+  h <- tail(img$shape, 2)[1]
+  w <- tail(img$shape, 2)[2]
+
+  dtype <- if (img$is_floating_point()) img$dtype else torch::torch_float32()
+  grid <- perspective_grid(coeffs, ow = w, oh = h, dtype = dtype, device = img$device)
+  mode <- normalize_interpolation_mode(interpolation, interpolation_modes)
+
+  apply_grid_transform(img, grid, mode)
+}
+
+perspective_boxes <- function(boxes, startpoints, endpoints) {
+  if (boxes$size(1) == 0) return(boxes)
+
+  orig_dtype <- boxes$dtype
+
+  # homography matrix 3x3 and inverse
+  coeffs <- get_perspective_coeffs(startpoints, endpoints)
+  H <- torch::torch_tensor(
+    matrix(c(coeffs[1:3], coeffs[4:6], coeffs[7:8], 1), nrow = 3, byrow = TRUE),
+    dtype = torch::torch_float32(), device = boxes$device
+  )
+  H_inv <- torch::torch_inverse(H)
+
+  # Get 4 corners of N boxes (x0,y0, x1,y0, x1,y1, x0,y1) into (N, 4, 2) and explicit cast to float32
+  idx <- c(1, 2,  3, 2,  3, 4,  1, 4)
+  pts <- boxes[, idx]$view(c(-1, 4, 2))$to(dtype = torch::torch_float32())
+
+  # reshape to (N, 4, 3)
+  ones <- torch::torch_ones(c(boxes$size(1), 4, 1), dtype = torch::torch_float32(), device = boxes$device)
+  pts_homo <- torch::torch_cat(list(pts, ones), dim = 3)
+
+  # Projection : P_out = P_in x (H_inv)^T
+  trans_pts <- torch::torch_matmul(pts_homo, H_inv$t())
+
+  # Normalise
+  trans_xy <- trans_pts[.., 1:2] / trans_pts[.., 3]$unsqueeze(-1)
+
+  # Min & max of transformed boxes corners
+  x_min <- trans_xy[.., 1]$min(dim = 2)[[1]]
+  y_min <- trans_xy[.., 2]$min(dim = 2)[[1]]
+  x_max <- trans_xy[.., 1]$max(dim = 2)[[1]]
+  y_max <- trans_xy[.., 2]$max(dim = 2)[[1]]
+
+  out_boxes <- torch::torch_stack(list(x_min, y_min, x_max, y_max), dim = 2)
+  out_boxes$to(dtype = orig_dtype)
+}
+
+
 

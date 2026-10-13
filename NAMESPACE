@@ -2,11 +2,115 @@
 
 S3method(draw_bounding_boxes,default)
 S3method(draw_bounding_boxes,image_with_bounding_box)
+S3method(draw_bounding_boxes,image_with_rotated_box)
 S3method(draw_bounding_boxes,torch_tensor)
 S3method(draw_segmentation_masks,default)
 S3method(draw_segmentation_masks,image_with_segmentation_mask)
 S3method(draw_segmentation_masks,torch_tensor)
 S3method(get_image_size,"magick-image")
+S3method(get_image_size,torch_tensor)
+S3method(item_transform_affine,dataset)
+S3method(item_transform_affine,default)
+S3method(item_transform_affine,image_with_bounding_box)
+S3method(item_transform_affine,image_with_rotated_box)
+S3method(item_transform_affine,image_with_segmentation_mask)
+S3method(item_transform_center_crop,dataset)
+S3method(item_transform_center_crop,default)
+S3method(item_transform_center_crop,image_with_bounding_box)
+S3method(item_transform_center_crop,image_with_rotated_box)
+S3method(item_transform_center_crop,image_with_segmentation_mask)
+S3method(item_transform_crop,dataset)
+S3method(item_transform_crop,default)
+S3method(item_transform_crop,image_with_bounding_box)
+S3method(item_transform_crop,image_with_rotated_box)
+S3method(item_transform_crop,image_with_segmentation_mask)
+S3method(item_transform_hflip,dataset)
+S3method(item_transform_hflip,default)
+S3method(item_transform_hflip,image_with_bounding_box)
+S3method(item_transform_hflip,image_with_rotated_box)
+S3method(item_transform_hflip,image_with_segmentation_mask)
+S3method(item_transform_pad,dataset)
+S3method(item_transform_pad,default)
+S3method(item_transform_pad,image_with_bounding_box)
+S3method(item_transform_pad,image_with_rotated_box)
+S3method(item_transform_pad,image_with_segmentation_mask)
+S3method(item_transform_perspective,dataset)
+S3method(item_transform_perspective,default)
+S3method(item_transform_perspective,image_with_bounding_box)
+S3method(item_transform_perspective,image_with_rotated_box)
+S3method(item_transform_perspective,image_with_segmentation_mask)
+S3method(item_transform_random_affine,dataset)
+S3method(item_transform_random_affine,default)
+S3method(item_transform_random_affine,image_with_bounding_box)
+S3method(item_transform_random_affine,image_with_rotated_box)
+S3method(item_transform_random_affine,image_with_segmentation_mask)
+S3method(item_transform_random_crop,dataset)
+S3method(item_transform_random_crop,default)
+S3method(item_transform_random_crop,image_with_bounding_box)
+S3method(item_transform_random_crop,image_with_rotated_box)
+S3method(item_transform_random_crop,image_with_segmentation_mask)
+S3method(item_transform_random_erasing,dataset)
+S3method(item_transform_random_erasing,default)
+S3method(item_transform_random_erasing,image_with_bounding_box)
+S3method(item_transform_random_erasing,image_with_rotated_box)
+S3method(item_transform_random_erasing,image_with_segmentation_mask)
+S3method(item_transform_random_horizontal_flip,dataset)
+S3method(item_transform_random_horizontal_flip,default)
+S3method(item_transform_random_horizontal_flip,image_with_bounding_box)
+S3method(item_transform_random_horizontal_flip,image_with_rotated_box)
+S3method(item_transform_random_horizontal_flip,image_with_segmentation_mask)
+S3method(item_transform_random_perspective,dataset)
+S3method(item_transform_random_perspective,default)
+S3method(item_transform_random_perspective,image_with_bounding_box)
+S3method(item_transform_random_perspective,image_with_rotated_box)
+S3method(item_transform_random_perspective,image_with_segmentation_mask)
+S3method(item_transform_random_resize_crop,dataset)
+S3method(item_transform_random_resize_crop,default)
+S3method(item_transform_random_resize_crop,image_with_bounding_box)
+S3method(item_transform_random_resize_crop,image_with_rotated_box)
+S3method(item_transform_random_resize_crop,image_with_segmentation_mask)
+S3method(item_transform_random_rotation,dataset)
+S3method(item_transform_random_rotation,default)
+S3method(item_transform_random_rotation,image_with_bounding_box)
+S3method(item_transform_random_rotation,image_with_rotated_box)
+S3method(item_transform_random_rotation,image_with_segmentation_mask)
+S3method(item_transform_random_vertical_flip,dataset)
+S3method(item_transform_random_vertical_flip,default)
+S3method(item_transform_random_vertical_flip,image_with_bounding_box)
+S3method(item_transform_random_vertical_flip,image_with_rotated_box)
+S3method(item_transform_random_vertical_flip,image_with_segmentation_mask)
+S3method(item_transform_resize,dataset)
+S3method(item_transform_resize,default)
+S3method(item_transform_resize,image_with_bounding_box)
+S3method(item_transform_resize,image_with_rotated_box)
+S3method(item_transform_resize,image_with_segmentation_mask)
+S3method(item_transform_rotate,dataset)
+S3method(item_transform_rotate,default)
+S3method(item_transform_rotate,image_with_bounding_box)
+S3method(item_transform_rotate,image_with_rotated_box)
+S3method(item_transform_rotate,image_with_segmentation_mask)
+S3method(item_transform_vflip,dataset)
+S3method(item_transform_vflip,default)
+S3method(item_transform_vflip,image_with_bounding_box)
+S3method(item_transform_vflip,image_with_rotated_box)
+S3method(item_transform_vflip,image_with_segmentation_mask)
+S3method(prepare_sahi_split,"magick-image")
+S3method(prepare_sahi_split,dataset)
+S3method(prepare_sahi_split,numeric)
+S3method(prepare_sahi_split,torch_tensor)
+S3method(target_transform_affine,default)
+S3method(target_transform_affine,object_detection_target)
+S3method(target_transform_coco_masks,default)
+S3method(target_transform_coco_masks,segmentation_target)
+S3method(target_transform_resize,default)
+S3method(target_transform_resize,object_detection_target)
+S3method(target_transform_rotate,dataset)
+S3method(target_transform_rotate,default)
+S3method(target_transform_rotate,object_detection_target)
+S3method(target_transform_sahi_crop,default)
+S3method(target_transform_sahi_crop,object_detection_target)
+S3method(target_transform_trimap_masks,default)
+S3method(target_transform_trimap_masks,segmentation_target)
 S3method(transform_adjust_brightness,default)
 S3method(transform_adjust_brightness,torch_tensor)
 S3method(transform_adjust_contrast,default)
@@ -61,6 +165,9 @@ S3method(transform_resized_crop,default)
 S3method(transform_rgb_to_grayscale,torch_tensor)
 S3method(transform_rotate,default)
 S3method(transform_rotate,torch_tensor)
+S3method(transform_sahi_crop,"magick-image")
+S3method(transform_sahi_crop,default)
+S3method(transform_sahi_crop,torch_tensor)
 S3method(transform_ten_crop,default)
 S3method(transform_ten_crop,torch_tensor)
 S3method(transform_to_tensor,"magick-image")
@@ -70,16 +177,21 @@ S3method(transform_to_tensor,list)
 S3method(transform_to_tensor,matrix)
 S3method(transform_vflip,default)
 S3method(transform_vflip,torch_tensor)
+S3method(vision_make_grid,"magick-image")
+S3method(vision_make_grid,default)
+S3method(vision_make_grid,torch_tensor)
 export(base_loader)
 export(batched_nms)
 export(box_area)
 export(box_convert)
 export(box_iou)
+export(box_xyxy_to_xyxyr)
 export(caltech101_dataset)
 export(caltech256_dataset)
 export(caltech_classes)
 export(cifar100_dataset)
 export(cifar10_dataset)
+export(cityscapes_dataset)
 export(clip_boxes_to_image)
 export(coco_caption_dataset)
 export(coco_classes)
@@ -106,6 +218,23 @@ export(imagenet_1k_classes)
 export(imagenet_21k_classes)
 export(imagenet_21k_df)
 export(imagenet_classes)
+export(item_transform_affine)
+export(item_transform_center_crop)
+export(item_transform_crop)
+export(item_transform_hflip)
+export(item_transform_pad)
+export(item_transform_perspective)
+export(item_transform_random_affine)
+export(item_transform_random_crop)
+export(item_transform_random_erasing)
+export(item_transform_random_horizontal_flip)
+export(item_transform_random_perspective)
+export(item_transform_random_resize_crop)
+export(item_transform_random_rotation)
+export(item_transform_random_vertical_flip)
+export(item_transform_resize)
+export(item_transform_rotate)
+export(item_transform_vflip)
 export(kmnist_dataset)
 export(lfw_pairs_dataset)
 export(lfw_people_dataset)
@@ -154,6 +283,10 @@ export(model_fasterrcnn_resnet50_fpn_v2)
 export(model_fcn_resnet101)
 export(model_fcn_resnet50)
 export(model_inception_v3)
+export(model_lw_detr_large)
+export(model_lw_detr_medium)
+export(model_lw_detr_small)
+export(model_lw_detr_tiny)
 export(model_maskrcnn_resnet50_fpn)
 export(model_maskrcnn_resnet50_fpn_v2)
 export(model_maxvit)
@@ -169,6 +302,13 @@ export(model_resnet34)
 export(model_resnet50)
 export(model_resnext101_32x8d)
 export(model_resnext50_32x4d)
+export(model_rfdetr_base)
+export(model_rfdetr_base_2)
+export(model_rfdetr_base_o365)
+export(model_rfdetr_large)
+export(model_rfdetr_medium)
+export(model_rfdetr_nano)
+export(model_rfdetr_small)
 export(model_vgg11)
 export(model_vgg11_bn)
 export(model_vgg13)
@@ -193,6 +333,7 @@ export(pascal_segmentation_dataset)
 export(pascal_voc_classes)
 export(places365_dataset)
 export(places365_dataset_large)
+export(prepare_sahi_split)
 export(qmnist_dataset)
 export(remove_small_boxes)
 export(rf100_biology_collection)
@@ -203,7 +344,11 @@ export(rf100_medical_collection)
 export(rf100_peixos_segmentation_dataset)
 export(rf100_underwater_collection)
 export(search_collection)
+export(target_transform_affine)
 export(target_transform_coco_masks)
+export(target_transform_resize)
+export(target_transform_rotate)
+export(target_transform_sahi_crop)
 export(target_transform_trimap_masks)
 export(tensor_image_browse)
 export(tensor_image_display)
@@ -241,6 +386,7 @@ export(transform_resize)
 export(transform_resized_crop)
 export(transform_rgb_to_grayscale)
 export(transform_rotate)
+export(transform_sahi_crop)
 export(transform_ten_crop)
 export(transform_to_tensor)
 export(transform_vflip)
@@ -253,62 +399,104 @@ importFrom(grDevices,dev.off)
 importFrom(graphics,polygon)
 importFrom(jsonlite,fromJSON)
 importFrom(magrittr,"%>%")
-importFrom(stats,setNames)
-importFrom(torch,as_array)
-importFrom(torch,dataset)
-importFrom(torch,load_state_dict)
-importFrom(torch,nn_adaptive_avg_pool2d)
-importFrom(torch,nn_batch_norm1d)
-importFrom(torch,nn_batch_norm2d)
-importFrom(torch,nn_conv2d)
-importFrom(torch,nn_conv_transpose2d)
-importFrom(torch,nn_dropout)
-importFrom(torch,nn_gelu)
-importFrom(torch,nn_hardsigmoid)
-importFrom(torch,nn_hardswish)
-importFrom(torch,nn_identity)
-importFrom(torch,nn_layer_norm)
-importFrom(torch,nn_linear)
-importFrom(torch,nn_max_pool2d)
-importFrom(torch,nn_module)
-importFrom(torch,nn_module_dict)
-importFrom(torch,nn_module_list)
-importFrom(torch,nn_parameter)
-importFrom(torch,nn_prelu)
-importFrom(torch,nn_relu)
-importFrom(torch,nn_sequential)
-importFrom(torch,nn_softmax)
-importFrom(torch,nnf_gelu)
-importFrom(torch,nnf_grid_sample)
-importFrom(torch,nnf_interpolate)
-importFrom(torch,nnf_layer_norm)
-importFrom(torch,nnf_normalize)
-importFrom(torch,nnf_relu)
-importFrom(torch,nnf_softmax)
-importFrom(torch,torch_arange)
-importFrom(torch,torch_cat)
-importFrom(torch,torch_chunk)
-importFrom(torch,torch_clamp)
-importFrom(torch,torch_empty)
-importFrom(torch,torch_flatten)
-importFrom(torch,torch_float)
-importFrom(torch,torch_float32)
-importFrom(torch,torch_int32)
-importFrom(torch,torch_linspace)
-importFrom(torch,torch_log2)
-importFrom(torch,torch_long)
-importFrom(torch,torch_matmul)
-importFrom(torch,torch_max)
-importFrom(torch,torch_meshgrid)
-importFrom(torch,torch_nonzero)
-importFrom(torch,torch_ones)
-importFrom(torch,torch_randn)
-importFrom(torch,torch_sigmoid)
-importFrom(torch,torch_stack)
-importFrom(torch,torch_tensor)
-importFrom(torch,torch_zeros)
-importFrom(torch,torch_zeros_like)
-importFrom(utils,read.csv)
-importFrom(utils,read.delim)
-importFrom(utils,tail)
+importFrom(rlang,"%||%")
+importFrom(stats,
+  runif,
+  setNames
+)
+importFrom(torch,
+  as_array,
+  dataset,
+  load_state_dict,
+  nn_adaptive_avg_pool2d,
+  nn_avg_pool2d,
+  nn_batch_norm1d,
+  nn_batch_norm2d,
+  nn_buffer,
+  nn_conv2d,
+  nn_conv_transpose2d,
+  nn_dropout,
+  nn_embedding,
+  nn_flatten,
+  nn_gelu,
+  nn_hardsigmoid,
+  nn_hardswish,
+  nn_identity,
+  nn_init_constant_,
+  nn_init_normal_,
+  nn_init_ones_,
+  nn_init_trunc_normal_,
+  nn_init_xavier_uniform_,
+  nn_init_zeros_,
+  nn_layer_norm,
+  nn_linear,
+  nn_max_pool2d,
+  nn_module,
+  nn_module_dict,
+  nn_module_list,
+  nn_multihead_attention,
+  nn_parameter,
+  nn_prelu,
+  nn_relu,
+  nn_sequential,
+  nn_silu,
+  nn_softmax,
+  nn_tanh,
+  nnf_affine_grid,
+  nnf_gelu,
+  nnf_grid_sample,
+  nnf_interpolate,
+  nnf_layer_norm,
+  nnf_normalize,
+  nnf_relu,
+  nnf_silu,
+  nnf_softmax,
+  torch_abs,
+  torch_arange,
+  torch_atan2,
+  torch_bool,
+  torch_cat,
+  torch_chunk,
+  torch_clamp,
+  torch_cos,
+  torch_cumsum,
+  torch_div,
+  torch_empty,
+  torch_flatten,
+  torch_float,
+  torch_float32,
+  torch_full,
+  torch_gather,
+  torch_int32,
+  torch_linspace,
+  torch_log,
+  torch_log2,
+  torch_long,
+  torch_matmul,
+  torch_max,
+  torch_meshgrid,
+  torch_min,
+  torch_nonzero,
+  torch_ones,
+  torch_ones_like,
+  torch_rand,
+  torch_randn,
+  torch_sigmoid,
+  torch_sign,
+  torch_sin,
+  torch_stack,
+  torch_sum,
+  torch_tensor,
+  torch_topk,
+  torch_uint8,
+  torch_zeros,
+  torch_zeros_like,
+  with_no_grad
+)
+importFrom(utils,
+  head,
+  read.csv,
+  read.delim,
+  tail
+)
 importFrom(zeallot,"%<-%")
